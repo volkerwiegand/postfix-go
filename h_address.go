@@ -30,6 +30,7 @@ type Address struct {
 	// Computed values
 	Domain        *Domain
 	Aliases       []Alias
+	AliasList     string      `sql:"-"`
 }
 
 func AddressInit() {
@@ -97,6 +98,14 @@ func (address *Address) AddressSetup(db *gorm.DB) {
 		log.Printf("ERROR AddressSetup:Aliases: %s", err)
 	}
 	address.Aliases = aliases
+
+	address.AliasList = ""
+	for _, alias := range aliases {
+		if address.AliasList != "" {
+			address.AliasList += "\n"
+		}
+		address.AliasList += alias.LocalPart
+	}
 }
 
 func AddressPassword(password string) string {
@@ -111,7 +120,6 @@ func AddressFindByID(id int, db *gorm.DB) *Address {
 		log.Printf("ERROR address %d not found", id)
 		return nil
 	}
-	address.AddressSetup(db)
 	return address
 }
 
@@ -121,7 +129,6 @@ func AddressFindByEmail(email string, db *gorm.DB) *Address {
 		log.Printf("ERROR email %s not found (%s)", email, err)
 		return nil
 	}
-	address.AddressSetup(db)
 	return address
 }
 
@@ -178,13 +185,7 @@ func AddressCreate(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 		return
 	}
 
-	domain := *DomainFindByName(Def_Domain, db)
-	ctx.Address = &Address{
-		ID:         0,
-		DomainName: domain.Name,
-		Admin:      false,
-	}
-
+	ctx.Address = &Address{ID: 0, DomainName: Def_Domain, Admin: false}
 	ctx.Domains = DomainFindAll(db, Def_Domain)
 
 	RenderHtml(w, r, "address_edit", ctx)
@@ -206,6 +207,7 @@ func AddressEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if !ctx.CurrentAddress.Admin {
 		// Non-Admins can do nothing but change their own poassword
 		ctx.Address = AddressFindByID(ctx.CurrentAddress.ID, db)
+		ctx.Address.AddressSetup(db)
 		ctx.Domains = DomainFindAll(db, ctx.Address.DomainName)
 		RenderHtml(w, r, "address_password", ctx)
 		return
@@ -217,7 +219,7 @@ func AddressEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		http.Redirect(w, r, HomeURL, http.StatusFound)
 		return
 	}
-
+	ctx.Address.AddressSetup(db)
 	ctx.Domains = DomainFindAll(db, ctx.Address.DomainName)
 
 	RenderHtml(w, r, "address_edit", ctx)
@@ -252,12 +254,28 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
-	local_part  := r.FormValue("address_local_part")
 	domain_name := r.FormValue("address_domain_name")
-	domain      := DomainFindByName(domain_name, db)
-	email       := fmt.Sprintf("%s@%s", local_part, domain.Name)
-	admin       := r.FormValue("address_admin")
-	password    := r.FormValue("address_password")
+	domain := &Domain{}
+	if err := db.Where("name = ?", domain_name).First(domain).Error; err != nil {
+		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
+		SetFlash(w, F_ERROR, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
+	}
+
+	alias_names := []string{}
+	for _, alias_name := range strings.Split(r.FormValue("address_alias_list"), "\n") {
+		alias_name = strings.TrimSpace(alias_name)
+		if alias_name != "" {
+			log.Printf("INFO  Alias: %v", alias_name)
+			alias_names = append(alias_names, alias_name)
+		}
+	}
+
+	local_part := r.FormValue("address_local_part")
+	email      := fmt.Sprintf("%s@%s", local_part, domain.Name)
+	admin      := r.FormValue("address_admin")
+	password   := r.FormValue("address_password")
 	//log.Printf("INFO  LocalPart=%s DomainName=%s Admin=%s", local_part, domain.Name, admin)
 
 	if id == 0 {
@@ -278,6 +296,9 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			}
 			SetFlash(w, F_ERROR, flash)
 		} else {
+			for _, alias_name := range alias_names {
+				AliasCreate(&address, alias_name, db, ctx.CurrentAddress.ID)
+			}
 			flash := fmt.Sprintf(t("flash_created"), address.Email)
 			SetFlash(w, F_INFO, flash)
 		}
@@ -321,6 +342,8 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 				}
 				SetFlash(w, F_ERROR, flash)
 			} else {
+				// TODO update all aliases?
+
 				flash := fmt.Sprintf(t("flash_updated"), address.Email)
 				SetFlash(w, F_INFO, flash)
 			}

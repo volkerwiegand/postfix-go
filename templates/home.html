@@ -19,9 +19,15 @@
               </td>
               <td>
                 <a href="/address/{{.ID}}">{{.Email}}</a>
+                {{if .Admin}}
+                  ({{T "address_admin"}})
+                {{end}}
               </td>
               <td>
-                (Aliases)
+                {{range .Aliases}}
+                  {{.Email}}
+                  <br>
+                {{end}}
               </td>
             </tr>
           {{end}}

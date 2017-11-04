@@ -32,9 +32,10 @@ func HomeIndex(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	if err := db.Find(&addresses).Error; err != nil {
 		log.Printf("ERROR HomeIndex:Addresses: %s", err)
 	} else {
-		//for _, address := range addresses {
-		//	TODO get aliases
-		//}
+		for index, _ := range addresses {
+			address := &addresses[index]
+			address.AddressSetup(db)
+		}
 	}
 	ctx.Addresses = addresses
 

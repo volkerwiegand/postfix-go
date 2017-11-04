@@ -3,13 +3,13 @@ package main
 import (
 	"os"
 	"log"
-	_ "fmt"
+	"fmt"
 	"time"
 	_ "strings"
 	_ "strconv"
 	_ "net/http"
 	_ "github.com/julienschmidt/httprouter"
-	_ "github.com/jinzhu/gorm"
+	"github.com/jinzhu/gorm"
 	_ "github.com/nicksnyder/go-i18n/i18n"
 )
 
@@ -43,5 +43,24 @@ func AliasInit() {
 	if err := db.Find(&aliases).Error; err != nil {
 		log.Printf("FATAL AliasInit:FindAll: %s", err)
 		os.Exit(1)
+	}
+}
+
+func AliasCreate(destination *Address, local_part string, db *gorm.DB, creator_id int) {
+	email := fmt.Sprintf("%s@%s", local_part, destination.DomainName)
+	log.Printf("INFO  creating alias %s for %s", email, destination.Email)
+
+	alias := Alias{
+		Email:       email,
+		Destination: destination.Email,
+		CreatedBy:   creator_id,
+		UpdatedBy:   creator_id,
+		LocalPart:   local_part,
+		DomainName:  destination.DomainName,
+		DomainID:    destination.DomainID,
+		AddressID:   destination.ID,
+	}
+	if err := db.Create(&alias).Error; err != nil {
+		log.Printf("ERROR AliasCreate: %s", err)
 	}
 }

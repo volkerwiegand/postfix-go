@@ -46,6 +46,12 @@
         </select>
       </div>
 
+      <div class="pure-control-group">
+        <label for="address_alias_list">{{T "alias_many"}}</label>
+        <textarea id="address_alias_list" name="address_alias_list" rows="5">{{.Address.AliasList}}</textarea>
+      </div>
+
+      <div class="pure-control-group">
       <div class="pure-controls">
         <button type="submit" class="pure-button menu-button success-button">
           <i class="fa fa-check"></i>
