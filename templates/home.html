@@ -1,0 +1,74 @@
+{{- define "home" -}}
+  {{template "header" .}}
+
+  <div class="main">
+    <div class="content">
+      <table class="table stripe table-bordered table-hover" style="display:none;">
+        <thead>
+          <tr>
+            <th>{{T "domain_one"}}</th>
+            <th>{{T "address_one"}}</th>
+            <th>{{T "alias_many"}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Addresses}}
+            <tr>
+              <td>
+                <a href="/domain/{{.DomainID}}">{{.DomainName}}</a>
+              </td>
+              <td>
+                <a href="/address/{{.ID}}">{{.Email}}</a>
+              </td>
+              <td>
+                (Aliases)
+              </td>
+            </tr>
+          {{end}}
+          {{range .Domains}}
+            <tr>
+              <td>
+                <a href="/domain/{{.ID}}">{{.Name}}</a>
+              </td>
+              <td>
+                &nbsp;
+              </td>
+              <td>
+                &nbsp;
+              </td>
+            </tr>
+          {{end}}
+        </tbody>
+      </table>
+
+      <br>
+
+      <a href="/domain" class="pure-button menu-button success-button">
+        <i class="fa fa-server"></i>
+        <br>
+        {{T "action_new_domain"}}
+      </a>
+      &nbsp;
+      <a href="/address" class="pure-button menu-button success-button">
+        <i class="fa fa-user"></i>
+        <br>
+        {{T "action_new_address"}}
+      </a>
+    </div>
+  </div>
+  <script type="text/javascript">
+    $(document).ready(function() {
+      var table = $('table.table').show().DataTable({
+        {{if eq .Language "de"}}
+          "language": dataTable_de,
+        {{end}}
+        "autoWidth": false
+      });
+      $('#DataTables_Table_0_filter input').focus();
+    });
+  </script>
+
+  {{template "footer" .}}
+{{end}}
+
+{{/* vim: set expandtab softtabstop=2 shiftwidth=2 autoindent : */}}

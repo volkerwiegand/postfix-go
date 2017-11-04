@@ -1,0 +1,42 @@
+{{- define "login" -}}
+  {{template "header" .}}
+
+  <div class="main">
+    <div class="login-form">
+      <form class="pure-form pure-form-aligned" action="/login" method="POST" accept-charset="UTF-8">
+        <img src="/static/img/Logo.png" alt="Postfix Logo" height="92" width="133">
+        {{.CsrfField}}
+
+        <fieldset>
+          <div class="pure-control-group">
+            <label for="login_email">{{T "address_email"}}</label>
+            <input id="login_email" type="text" name="login_email" required autofocus>
+          </div>
+
+          <div class="pure-control-group">
+            <label for="login_password">{{T "address_password"}}</label>
+            <input id="login_password" type="password" name="login_password">
+          </div>
+
+          <div class="pure-controls">
+            <button type="submit" class="pure-button menu-button success-button">
+              <i class="fa fa-check"></i>
+              <br>
+              {{T "login_submit"}}
+            </button>
+            &nbsp;&nbsp;
+            <a href="/" class="pure-button menu-button">
+              <i class="fa fa-question"></i>
+              <br>
+              {{T "address_password"}}
+            </a>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+  </div>
+
+  {{template "footer" .}}
+{{end}}
+
+{{/* vim: set expandtab softtabstop=2 shiftwidth=2 autoindent : */}}

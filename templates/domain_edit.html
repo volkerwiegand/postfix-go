@@ -1,0 +1,51 @@
+{{- define "domain_edit" -}}
+  {{template "header" .}}
+
+  <form class="pure-form pure-form-aligned" action="/domain/{{.Domain.ID}}" method="POST" accept-charset="UTF-8" autocomplete="off">
+    {{.CsrfField}}
+
+    <fieldset>
+      <div class="pure-controls first-control-group">
+        {{if .Domain.ID}}
+          <h3>{{T "domain_one"}}: {{.Domain.Name}}</h3>
+        {{else}}
+          <h3>{{T "domain_one"}}: {{T "show_new"}}</h3>
+        {{end}}
+      </div>
+
+      <div class="pure-control-group">
+        <label for="domain_name">{{T "domain_name"}}</label>
+        <input id="domain_name" type="text" name="domain_name" value="{{.Domain.Name}}" required autofocus>
+      </div>
+
+      <div class="pure-controls">
+        <button type="submit" class="pure-button menu-button success-button">
+          <i class="fa fa-check"></i>
+          <br>
+          {{T "action_save"}}
+        </button>
+        &nbsp;&nbsp;
+        <a href="/" class="pure-button menu-button">
+          <i class="fa fa-times"></i>
+          <br>
+          {{T "action_cancel"}}
+        </a>
+        &nbsp;&nbsp;
+        {{if ne 0 .Domain.ID}}
+          {{if not .Domain.Addresses}}
+            <a href="/domain/{{.Domain.ID}}/delete" class="pure-button menu-button error-button"
+                    onclick="return confirm('{{T "are_you_sure"}}');">
+              <i class="fa fa-trash"></i>
+              <br>
+              {{T "action_delete"}}
+            </a>
+          {{end}}
+        {{end}}
+      </div>
+    </fieldset>
+  </form>
+
+  {{template "footer" .}}
+{{end}}
+
+{{/* vim: set expandtab softtabstop=2 shiftwidth=2 autoindent : */}}

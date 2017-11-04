@@ -1,2 +1,2 @@
 # postfix-go
-Manage virtual tables for Postfix Domains and Users with Golang
+Manage virtual tables for Postfix Domains and Email Addresses with Golang

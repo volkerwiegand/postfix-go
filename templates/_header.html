@@ -1,0 +1,74 @@
+{{- define "header" -}}
+<!DOCTYPE html>
+<html lang="{{.Language}}">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Postfix Virtual Domain and Email Admin">
+    <meta name="author" content="Volker Wiegand">
+    <link rel="shortcut icon" href="/static/img/favicon.ico">
+    <title>{{T .Title}} - Postfix-Go</title>
+
+    <link rel="stylesheet" type="text/css" href="/static/css/pure{{.Minified}}.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/grids-responsive{{.Minified}}.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/font-awesome{{.Minified}}.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/datatables{{.Minified}}.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/postfix-go.css">
+    {{range .StyleSheets}}
+      <link rel="stylesheet" type="text/css" href="/static/css/{{.}}.css">
+    {{end}}
+
+    <script type="text/javascript" src="/static/js/datatables{{.Minified}}.js"></script>
+    <script type="text/javascript" src="/static/js/datatables.{{.Language}}.js"></script>
+    {{range .JavaScripts}}
+      <script type="text/javascript" src="/static/js/{{.}}.js"></script>
+    {{end}}
+  </head>
+  <body>
+    <script type="text/javascript" src="/static/js/alertify.js"></script>
+    <script type="text/javascript">
+      var message;
+      {{if .Flash}}
+        var flash = JSON.parse({{.Flash}});
+        if (flash.msg == "info") {
+          message = "<strong>" + flash.text + "</strong>";
+          alertify.logPosition("bottom right").success(message);
+        }
+        if (flash.msg == "error") {
+          message = "<strong>" + flash.text + "</strong>";
+          alertify.logPosition("bottom right").error(message);
+        }
+      {{end}}
+    </script>
+
+    <div class="pure-g status-line">
+      <div class="pure-u-1 pure-u-sm-1-5 status-left">
+        <span>
+          <a href="/" class="pure-button menu-button pure-button-primary">
+            <i class="fa fa-envelope-o"></i>
+            <br>
+            Postfix-Go
+          </a>
+        </span>
+      </div>
+      <div class="pure-u-1 pure-u-sm-4-5 status-right">
+        <span>
+          {{if .LoggedIn}}
+            <b>{{.CurrentAddress.Email}}</b>
+            &nbsp;&nbsp;
+            <a href="/logout" class="pure-button menu-button">
+              <i class="fa fa-sign-out"></i>
+              <br>
+              Logout
+            </a>
+          {{else}}
+            {{T "not_logged_in"}}
+          {{end}}
+        </span>
+      </div>
+    </div>
+    <hr>
+{{end}}
+
+{{/* vim: set expandtab softtabstop=2 shiftwidth=2 autoindent : */}}

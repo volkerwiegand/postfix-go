@@ -1,0 +1,80 @@
+{{- define "address_edit" -}}
+  {{template "header" .}}
+
+  <form class="pure-form pure-form-aligned" action="/address/{{.Address.ID}}" method="POST" accept-charset="UTF-8" autocomplete="off">
+    {{.CsrfField}}
+
+    <fieldset>
+      <div class="pure-controls first-control-group">
+        {{if .Address.ID}}
+          <h3>{{T "address_one"}}: {{.Address.Email}}</h3>
+        {{else}}
+          <h3>{{T "address_one"}}: {{T "show_new"}}</h3>
+        {{end}}
+      </div>
+
+      <div class="pure-control-group">
+        <label for="address_local_part">{{T "address_local_part"}}</label>
+        <input id="address_local_part" type="text" name="address_local_part" value="{{.Address.LocalPart}}" required autofocus>
+        <span class="pure-form-message-inline"><a href="#">Hinweis</a></span>
+      </div>
+
+      <div class="pure-control-group">
+        <label for="address_domain_name">{{T "domain_one"}}</label>
+        <select id="address_domain_name" name="address_domain_name">
+          {{range .Domains}}
+            <option value="{{.Name}}" {{.Selected}}>{{.Name}}</option>
+          {{end}}
+        </select>
+      </div>
+
+      <div class="pure-control-group">
+        <label for="address_password">{{T "address_password"}}</label>
+        <input id="address_password" type="password" name="address_password">
+      </div>
+
+      <div class="pure-control-group">
+        <label for="address_admin">{{T "address_admin"}}</label>
+        <select id="address_admin" name="address_admin">
+          {{if .Address.Admin}}
+            <option value="yes" selected>{{T "positive"}}</option>
+            <option value="no">{{T "negative"}}</option>
+          {{else}}
+            <option value="yes">{{T "positive"}}</option>
+            <option value="no" selected>{{T "negative"}}</option>
+          {{end}}
+        </select>
+      </div>
+
+      <div class="pure-controls">
+        <button type="submit" class="pure-button menu-button success-button">
+          <i class="fa fa-check"></i>
+          <br>
+          {{T "action_save"}}
+        </button>
+        &nbsp;&nbsp;
+        <a href="/" class="pure-button menu-button">
+          <i class="fa fa-times"></i>
+          <br>
+          {{T "action_cancel"}}
+        </a>
+
+        {{if ne 0 .Address.ID}}
+          {{if ne .CurrentAddress.ID .Address.ID}}
+            &nbsp;&nbsp;
+            <a href="/address/{{.Address.ID}}/delete" class="pure-button menu-button error-button"
+                    onclick="return confirm('{{T "are_you_sure"}}');">
+              <i class="fa fa-trash"></i>
+              <br>
+              {{T "action_delete"}}
+            </a>
+          {{end}}
+        {{end}}
+      </div>
+    </fieldset>
+  </form>
+
+  {{template "footer" .}}
+{{end}}
+
+{{/* vim: set expandtab softtabstop=2 shiftwidth=2 autoindent : */}}
