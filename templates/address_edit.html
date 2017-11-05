@@ -16,7 +16,7 @@
       <div class="pure-control-group">
         <label for="address_local_part">{{T "address_local_part"}}</label>
         <input id="address_local_part" type="text" name="address_local_part" value="{{.Address.LocalPart}}" required autofocus>
-        <span class="pure-form-message-inline"><a href="#">Hinweis</a></span>
+        <span class="pure-form-message-inline">{{T "address_local_part_hint"}}</span>
       </div>
 
       <div class="pure-control-group">
@@ -49,6 +49,7 @@
       <div class="pure-control-group">
         <label for="address_alias_list">{{T "alias_many"}}</label>
         <textarea id="address_alias_list" name="address_alias_list" rows="5">{{.Address.AliasList}}</textarea>
+        <span class="pure-form-message-inline">{{T "address_aliases_hint"}}</span>
       </div>
 
       <div class="pure-control-group">

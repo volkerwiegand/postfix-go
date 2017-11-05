@@ -43,10 +43,12 @@
   { "id": "address_many",		"translation": "Adressen" },
   { "id": "address_email",		"translation": "Email" },
   { "id": "address_local_part",		"translation": "Lokalteil" },
+  { "id": "address_local_part_hint",	"translation": "Nur Buchstaben (ohne Umlaute oder ß) Ziffern - _ ." },
   { "id": "address_local_part_default",	"translation": "admin" },
   { "id": "address_password",		"translation": "Kennwort" },
   { "id": "address_password_default",	"translation": "geheim" },
   { "id": "address_admin",		"translation": "Administrator" },
+  { "id": "address_aliases_hint",	"translation": "Ein Alias pro Zeile (ohne Domainteil)" },
   { "id": "alias_one",			"translation": "Alias" },
   { "id": "alias_many",			"translation": "Aliases" },
   { "id": "xxx",			"translation": "yyy" }
