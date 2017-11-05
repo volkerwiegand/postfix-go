@@ -57,10 +57,6 @@ func (domain *Domain) DomainSetup(db *gorm.DB, selected bool) {
 	addresses := []Address{}
 	if err := db.Where("domain_id = ?", domain.ID).Order("local_part").Find(&addresses).Error; err != nil {
 		log.Printf("ERROR DomainSetup:Addresses: %s", err)
-	} else {
-		for _, address := range addresses {
-			address.AddressSetup(db)
-		}
 	}
 	domain.Addresses = addresses
 

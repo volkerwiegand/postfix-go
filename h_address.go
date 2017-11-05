@@ -271,6 +271,7 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			alias_names = append(alias_names, alias_name)
 		}
 	}
+	//log.Printf("INFO  AliasNames=%v", alias_names)
 
 	local_part := r.FormValue("address_local_part")
 	email      := fmt.Sprintf("%s@%s", local_part, domain.Name)
