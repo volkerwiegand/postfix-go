@@ -51,6 +51,10 @@ var (
 	Web_Addr      string
 	Web_Token     string
 	Def_Domain    string
+	SMTP_Host     string
+	SMTP_Port     int
+	SMTP_Username string
+	SMTP_Password string
 	ProdMode      bool
 	Verbose       bool
 	prodTemplates *template.Template
@@ -72,33 +76,48 @@ func main() {
 	viper.SetEnvPrefix("postfix-go")
 	viper.AutomaticEnv()
 
-	viper.SetDefault("Language",   "de")
-	viper.SetDefault("DB_Type",    "sqlite3")
-	viper.SetDefault("Web_Addr",   ":8000")
-	viper.SetDefault("DB_Connect", "postfix-go.sql")
-	viper.SetDefault("Web_Token",  "_Postfix_Dovecot_Golang_PureCSS_")	// 32 bytes
-	viper.SetDefault("Def_Domain", "example.com")
-	viper.SetDefault("ProdMode",   false)
-	viper.SetDefault("Verbose",    false)
+	viper.SetDefault("Language",      "de")
+	viper.SetDefault("DB_Type",       "sqlite3")
+	viper.SetDefault("Web_Addr",      ":8000")
+	viper.SetDefault("DB_Connect",    "postfix-go.sql")
+	viper.SetDefault("Web_Token",     "_Postfix_Dovecot_Golang_PureCSS_")	// 32 bytes
+	viper.SetDefault("Def_Domain",    "example.com")
+	viper.SetDefault("SMTP_Host",     "mail.example.com")
+	viper.SetDefault("SMTP_Port",     587)
+	viper.SetDefault("SMTP_Username", "relay_user")
+	viper.SetDefault("SMTP_Password", "relay_pswd")
+	viper.SetDefault("ProdMode",      false)
+	viper.SetDefault("Verbose",       true)
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf("FATAL ReadInConfig: %s", err)
 		os.Exit(1)
 	}
 
-	Language   = viper.GetString("Language")
-	DB_Type    = viper.GetString("DB_Type")
-	DB_Connect = viper.GetString("DB_Connect")
-	Web_Addr   = viper.GetString("Web_Addr")
-	Web_Token  = viper.GetString("Web_Token")
-	Def_Domain = viper.GetString("Def_Domain")
-	ProdMode   = viper.GetBool("ProdMode")
-	Verbose    = viper.GetBool("Verbose")
+	Language      = viper.GetString("Language")
+	DB_Type       = viper.GetString("DB_Type")
+	DB_Connect    = viper.GetString("DB_Connect")
+	Web_Addr      = viper.GetString("Web_Addr")
+	Web_Token     = viper.GetString("Web_Token")
+	Def_Domain    = viper.GetString("Def_Domain")
+	SMTP_Host     = viper.GetString("SMTP_Host")
+	SMTP_Port     = viper.GetInt("SMTP_Port")
+	SMTP_Username = viper.GetString("SMTP_Username")
+	SMTP_Password = viper.GetString("SMTP_Password")
+	ProdMode      = viper.GetBool("ProdMode")
+	Verbose       = viper.GetBool("Verbose")
 
 	if DB_Type == "mysql" {
 		DB_ConnStr = DB_Connect + "?charset=utf8&parseTime=True&loc=Local"
 	} else {
 		DB_ConnStr = DB_Connect
+	}
+
+	if Verbose {
+		log.Printf("DEBUG Language ........... %s",    Language)
+		log.Printf("DEBUG DB-Connect ......... %s:%s", DB_Type, DB_ConnStr)
+		log.Printf("DEBUG SMTP-Host:Port ..... %s:%d", SMTP_Host, SMTP_Port)
+		log.Printf("DEBUG SMTP-Login ......... %s %s", SMTP_Username, SMTP_Password)
 	}
 
 	//
@@ -190,7 +209,6 @@ func RenderHtml(w http.ResponseWriter, r *http.Request, tmpl string, ctx Context
 			log.Printf("FATAL LoadTranslationFile %s: %s", langfile, err)
 			os.Exit(1)
 		}
-
 		ctx.Minified = ""
 		runTemplates = template.Must(template.New("").Funcs(funcMap).ParseGlob("templates/*"))
 	}

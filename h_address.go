@@ -12,6 +12,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/jinzhu/gorm"
 	"github.com/nicksnyder/go-i18n/i18n"
+	"gopkg.in/gomail.v2"
 )
 
 type Address struct {
@@ -284,6 +285,21 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		alias_names = append(alias_names, alias_name)
 	}
 	//log.Printf("DEBUG AliasNames=%v", alias_names)
+
+	if other_email != "" {
+		mail := gomail.NewMessage()
+		mail.SetHeader("From",    ctx.CurrentAddress.Email)
+		mail.SetHeader("To",      other_email)
+		mail.SetHeader("Subject", fmt.Sprintf(t("address_email_subject"), email))
+		mail.SetBody("text/plain", "Hello!")
+		//mail.AddAlternativeWriter("text/plain", func(w io.Writer) error {
+		//	return tmpl.Execute(w, "Bob")
+		//})
+		dial := gomail.NewDialer(SMTP_Host, SMTP_Port, SMTP_Username, SMTP_Password)
+		if err := dial.DialAndSend(mail); err != nil {
+			log.Printf("ERROR AddressUpdate:DialAndSend: %s", err)
+		}
+	}
 
 	if id == 0 {
 		address := &Address{

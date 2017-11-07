@@ -51,6 +51,7 @@
   { "id": "address_other_email_hint",	"translation": "Zum Zurücksetzen des Kennworts" },
   { "id": "address_admin",		"translation": "Administrator" },
   { "id": "address_aliases_hint",	"translation": "Ein Alias pro Zeile (ohne Domain)" },
+  { "id": "address_email_subject",	"translation": "Ihr Kennwort für %s" },
   { "id": "alias_one",			"translation": "Alias" },
   { "id": "alias_many",			"translation": "Aliases" },
   { "id": "xxx",			"translation": "yyy" }
