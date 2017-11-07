@@ -58,7 +58,6 @@ var (
 	ProdMode      bool
 	Verbose       bool
 	Templates     *template.Template
-	funcMap       template.FuncMap
 	Database      *gorm.DB
 	CookiePrefix  = "postfix_go_"
 	DB_Mutex      = &sync.Mutex{}
@@ -139,7 +138,7 @@ func main() {
 	//
 	// Initialize templates and function map
 	//
-	funcMap = template.FuncMap{
+	funcMap := template.FuncMap{
 		"safe": func(s string) template.HTML {
 			return template.HTML(s)
 		},
