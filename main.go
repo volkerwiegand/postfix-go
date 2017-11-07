@@ -57,7 +57,7 @@ var (
 	SMTP_Password string
 	ProdMode      bool
 	Verbose       bool
-	prodTemplates *template.Template
+	Templates     *template.Template
 	funcMap       template.FuncMap
 	Database      *gorm.DB
 	CookiePrefix  = "postfix_go_"
@@ -152,9 +152,7 @@ func main() {
 			return tm.Format(t("date_time"))
 		},
 	}
-	if ProdMode {
-		prodTemplates = template.Must(template.New("").Funcs(funcMap).ParseGlob("templates/*"))
-	}
+	Templates = template.Must(template.New("").Funcs(funcMap).ParseGlob("templates/*"))
 
 	//
 	// Setup the web server and router
@@ -189,8 +187,6 @@ func main() {
 }
 
 func RenderHtml(w http.ResponseWriter, r *http.Request, tmpl string, ctx Context) {
-	var runTemplates *template.Template
-
 	ctx.Language = Language
 
 	if ctx.Flash = GetCookie(r, "flash"); ctx.Flash != "" {
@@ -202,18 +198,11 @@ func RenderHtml(w http.ResponseWriter, r *http.Request, tmpl string, ctx Context
 
 	if ProdMode {
 		ctx.Minified = ".min"
-		runTemplates = prodTemplates
 	} else {
-		langfile := fmt.Sprintf("locales/%s.all.json", Language)
-		if err := i18n.LoadTranslationFile(langfile); err != nil {
-			log.Printf("FATAL LoadTranslationFile %s: %s", langfile, err)
-			os.Exit(1)
-		}
 		ctx.Minified = ""
-		runTemplates = template.Must(template.New("").Funcs(funcMap).ParseGlob("templates/*"))
 	}
 
-	if err := runTemplates.ExecuteTemplate(w, tmpl, ctx); err != nil {
+	if err := Templates.ExecuteTemplate(w, tmpl, ctx); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
