@@ -5,12 +5,9 @@ import (
 	"log"
 	"fmt"
 	"time"
-	_ "strings"
-	_ "strconv"
-	_ "net/http"
-	_ "github.com/julienschmidt/httprouter"
+	"strings"
 	"github.com/jinzhu/gorm"
-	_ "github.com/nicksnyder/go-i18n/i18n"
+	"github.com/nicksnyder/go-i18n/i18n"
 )
 
 type Alias struct {
@@ -46,15 +43,59 @@ func AliasInit() {
 	}
 }
 
-func AliasCreate(destination *Address, local_part string, db *gorm.DB, creator_id int) {
+func AliasFindByID(id int, db *gorm.DB) *Alias {
+	alias := &Alias{}
+	if err := db.First(alias, id).Error; err != nil {
+		return nil
+	}
+	return alias
+}
+
+func AliasFindByEmail(email string, db *gorm.DB) *Alias {
+	alias := &Alias{}
+	if err := db.Where("email = ?", email).First(alias).Error; err != nil {
+		return nil
+	}
+	return alias
+}
+
+func AliasCheck(local_part, domain_name string, destination_id int, db *gorm.DB) string {
+	t, _ := i18n.Tfunc(Language)
+
+	email := fmt.Sprintf("%s@%s", local_part, domain_name)
+
+	if destination_id != 0 {
+		destination := AddressFindByID(destination_id, db)
+		if destination == nil {
+			return fmt.Sprintf(t("flash_address_not_found"), destination_id)
+		}
+
+		if address := AddressFindByEmail(email, db); address != nil {
+			return fmt.Sprintf(t("flash_error_exists"), email)
+		}
+	}
+
+	if alias := AliasFindByEmail(email, db); alias != nil {
+		if alias.AddressID == destination_id {
+			return ""
+		}
+		return fmt.Sprintf(t("flash_error_exists"), email)
+	}
+
+	return ""
+}
+
+func AliasCreate(destination *Address, local_part string, db *gorm.DB) string {
+	t, _ := i18n.Tfunc(Language)
+
 	email := fmt.Sprintf("%s@%s", local_part, destination.DomainName)
 	log.Printf("INFO  creating alias %s for %s", email, destination.Email)
 
 	alias := Alias{
 		Email:       email,
 		Destination: destination.Email,
-		CreatedBy:   creator_id,
-		UpdatedBy:   creator_id,
+		CreatedBy:   destination.CreatedBy,
+		UpdatedBy:   destination.UpdatedBy,
 		LocalPart:   local_part,
 		DomainName:  destination.DomainName,
 		DomainID:    destination.DomainID,
@@ -62,5 +103,12 @@ func AliasCreate(destination *Address, local_part string, db *gorm.DB, creator_i
 	}
 	if err := db.Create(&alias).Error; err != nil {
 		log.Printf("ERROR AliasCreate: %s", err)
+		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
+		if strings.Index(err.Error(), "UNIQUE") >= 0 {
+			flash = fmt.Sprintf(t("flash_error_exists"), email)
+		}
+		return flash
 	}
+
+	return ""
 }

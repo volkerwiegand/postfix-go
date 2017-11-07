@@ -22,7 +22,8 @@ type Domain struct {
 	UpdatedBy     int         `gorm:"index"`
 	// Computed values
 	Addresses     []Address
-	Selected      string      `sql:"-"`
+	AddressCount  int         `sql:"-"`
+	Selected      bool        `sql:"-"`
 }
 
 func DomainInit() {
@@ -53,48 +54,42 @@ func DomainInit() {
 	}
 }
 
-func (domain *Domain) DomainSetup(db *gorm.DB, selected bool) {
+func (domain *Domain) DomainSetup(db *gorm.DB) {
 	addresses := []Address{}
 	if err := db.Where("domain_id = ?", domain.ID).Order("local_part").Find(&addresses).Error; err != nil {
 		log.Printf("ERROR DomainSetup:Addresses: %s", err)
 	}
 	domain.Addresses = addresses
-
-	if selected {
-		domain.Selected = "selected"
-	} else {
-		domain.Selected = ""
-	}
 }
 
 func DomainFindByID(id int, db *gorm.DB) *Domain {
 	domain := &Domain{}
 	if err := db.First(domain, id).Error; err != nil {
-		log.Printf("ERROR domain %d not found", id)
 		return nil
 	}
-	domain.DomainSetup(db, false)
 	return domain
 }
 
 func DomainFindByName(name string, db *gorm.DB) *Domain {
 	domain := &Domain{}
 	if err := db.Where("name = ?", name).First(domain).Error; err != nil {
-		log.Printf("ERROR domain %s not found", name)
 		return nil
 	}
-	domain.DomainSetup(db, false)
 	return domain
 }
 
 func DomainFindAll(db *gorm.DB, name string) []Domain {
+	log.Printf("DEBUG DomainFindAll: %s", name)
+
 	domains := []Domain{}
-	if err := db.Find(&domains).Error; err != nil {
+	if err := db.Order("name").Find(&domains).Error; err != nil {
 		log.Printf("ERROR DomainFindAll: %s", err)
 	}
+
 	for index, _ := range domains {
 		domain := &domains[index]
-		domain.DomainSetup(db, domain.Name == name)
+		domain.DomainSetup(db)
+		domain.Selected = (domain.Name == name)
 	}
 
 	return domains
@@ -139,6 +134,7 @@ func DomainEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		http.Redirect(w, r, HomeURL, http.StatusFound)
 		return
 	}
+	ctx.Domain.DomainSetup(db)
 
 	RenderHtml(w, r, "domain_edit", ctx)
 }
@@ -159,48 +155,99 @@ func DomainUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	name := r.FormValue("domain_name")
 
 	if id == 0 {
-		domain := Domain{
+		domain := &Domain{
 			Name:      name,
 			CreatedBy: ctx.CurrentAddress.ID,
 			UpdatedBy: ctx.CurrentAddress.ID,
 		}
-		if err := db.Create(&domain).Error; err != nil {
+		if err := db.Create(domain).Error; err != nil {
 			flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 			if strings.Index(err.Error(), "UNIQUE") >= 0 {
 				flash = fmt.Sprintf(t("flash_error_exists"), name)
 			}
 			SetFlash(w, F_ERROR, flash)
-		} else {
-			flash := fmt.Sprintf(t("flash_created"), domain.Name)
-			SetFlash(w, F_INFO, flash)
+			http.Redirect(w, r, HomeURL, http.StatusFound)
+			return
 		}
-	} else {
-		domain := DomainFindByID(id, db)
-		if domain == nil {
-			flash := fmt.Sprintf(t("flash_domain_not_found"), id)
-			SetFlash(w, F_ERROR, flash)
-		} else {
-			update := make(map[string]interface{})
 
-			if domain.Name != name {
-				update["name"] = name
-			}
-			update["updated_at"] = time.Now()
-			update["updated_by"] = ctx.CurrentAddress.ID
-
-			if err := db.Model(domain).Updates(update).Error; err != nil {
-				flash := fmt.Sprintf(t("flash_error_text"), err.Error())
-				if strings.Index(err.Error(), "UNIQUE") >= 0 {
-					flash = fmt.Sprintf(t("flash_error_exists"), name)
-				}
-				SetFlash(w, F_ERROR, flash)
-			} else {
-				flash := fmt.Sprintf(t("flash_updated"), domain.Name)
-				SetFlash(w, F_INFO, flash)
-			}
-		}
+		flash := fmt.Sprintf(t("flash_created"), domain.Name)
+		SetFlash(w, F_INFO, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
 	}
 
+	domain := DomainFindByID(id, db)
+	if domain == nil {
+		flash := fmt.Sprintf(t("flash_domain_not_found"), id)
+		SetFlash(w, F_ERROR, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
+	}
+
+	if domain.Name == name {
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
+	}
+
+	update := make(map[string]interface{})
+	update["name"] = name
+	update["updated_at"] = time.Now()
+	update["updated_by"] = ctx.CurrentAddress.ID
+
+	if err := db.Model(domain).Updates(update).Error; err != nil {
+		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
+		if strings.Index(err.Error(), "UNIQUE") >= 0 {
+			flash = fmt.Sprintf(t("flash_error_exists"), name)
+		}
+		SetFlash(w, F_ERROR, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
+	}
+
+	addresses := []Address{}
+	if err := db.Where("domain_id = ?", domain.ID).Find(&addresses).Error; err != nil {
+		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
+		SetFlash(w, F_ERROR, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
+	}
+	for index, _ := range addresses {
+		address := &addresses[index]
+		db.Model(address).Updates(Address{
+			Email:      fmt.Sprintf("%s@%s", address.LocalPart, domain.Name),
+			DomainName: domain.Name,
+			UpdatedAt:  time.Now(),
+			UpdatedBy:  ctx.CurrentAddress.ID,
+		})
+	}
+
+	aliases := []Alias{}
+	if err := db.Where("domain_id = ?", domain.ID).Find(&aliases).Error; err != nil {
+		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
+		SetFlash(w, F_ERROR, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
+	}
+	for index, _ := range aliases {
+		alias := &aliases[index]
+		destination := AddressFindByID(alias.AddressID, db)
+		if destination == nil {
+			flash := fmt.Sprintf(t("flash_address_not_found"), alias.AddressID)
+			SetFlash(w, F_ERROR, flash)
+			http.Redirect(w, r, HomeURL, http.StatusFound)
+			return
+		}
+		db.Model(alias).Updates(Alias{
+			Email:       fmt.Sprintf("%s@%s", alias.LocalPart, domain.Name),
+			Destination: destination.Email,
+			DomainName:  domain.Name,
+			UpdatedAt:   time.Now(),
+			UpdatedBy:   ctx.CurrentAddress.ID,
+		})
+	}
+
+	flash := fmt.Sprintf(t("flash_updated"), domain.Name)
+	SetFlash(w, F_INFO, flash)
 	http.Redirect(w, r, HomeURL, http.StatusFound)
 }
 
@@ -226,16 +273,22 @@ func DomainDelete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	}
 	name := domain.Name
 
+	domain.DomainSetup(db)
 	if len(domain.Addresses) > 0 {
 		flash := fmt.Sprintf(t("flash_domain_not_empty"), name)
 		SetFlash(w, F_ERROR, flash)
-	} else if err := db.Delete(domain).Error; err != nil {
-		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
-		SetFlash(w, F_ERROR, flash)
-	} else {
-		flash := fmt.Sprintf(t("flash_deleted"), name)
-		SetFlash(w, F_INFO, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
 	}
 
+	if err := db.Delete(domain).Error; err != nil {
+		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
+		SetFlash(w, F_ERROR, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
+	}
+
+	flash := fmt.Sprintf(t("flash_deleted"), name)
+	SetFlash(w, F_INFO, flash)
 	http.Redirect(w, r, HomeURL, http.StatusFound)
 }

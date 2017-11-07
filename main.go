@@ -155,12 +155,9 @@ func main() {
 	r.GET("/address",            AddressCreate)
 	r.GET("/address/:id",        AddressEdit)
 	r.POST("/address/:id",       AddressUpdate)
+	r.GET("/address/:id/print",  AddressPrint)
 	r.GET("/address/:id/delete", AddressDelete)
-	//r.GET("/aliases",            AliasIndex)
-	//r.GET("/aliases/new",        AliasGetNew)
-	//r.GET("/alias/:id",          AliasGetByID)
-	//r.POST("/alias/:id",         AliasPostByID)
-	//r.GET("/alias/:id/delete",   AliasDeleteByID)
+	// TODO audit trail
 
 	srv := &http.Server{
 		Addr:         Web_Addr,

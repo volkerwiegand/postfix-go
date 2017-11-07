@@ -23,15 +23,27 @@
         <label for="address_domain_name">{{T "domain_one"}}</label>
         <select id="address_domain_name" name="address_domain_name">
           {{range .Domains}}
-            <option value="{{.Name}}" {{.Selected}}>{{.Name}}</option>
+            {{if .Selected}}
+              <option value="{{.Name}}" selected>{{.Name}}</option>
+            {{else}}
+              <option value="{{.Name}}">{{.Name}}</option>
+            {{end}}
           {{end}}
         </select>
       </div>
 
       <div class="pure-control-group">
-        <label for="address_password">{{T "address_password"}}</label>
-        <input id="address_password" type="password" name="address_password">
+        <label for="address_other_email">{{T "address_other_email"}}</label>
+        <input id="address_other_email" type="text" name="address_other_email" value="{{.Address.OtherEmail}}">
+        <span class="pure-form-message-inline">{{T "address_other_email_hint"}}</span>
       </div>
+
+      {{if eq .CurrentAddress.ID .Address.ID}}
+        <div class="pure-control-group">
+          <label for="address_password">{{T "address_password"}}</label>
+          <input id="address_password" type="password" name="address_password">
+        </div>
+      {{end}}
 
       <div class="pure-control-group">
         <label for="address_admin">{{T "address_admin"}}</label>
@@ -74,6 +86,12 @@
               <i class="fa fa-trash"></i>
               <br>
               {{T "action_delete"}}
+            </a>
+            &nbsp;&nbsp;
+            <a href="/address/{{.Address.ID}}/print" class="pure-button menu-button">
+              <i class="fa fa-print"></i>
+              <br>
+              {{T "address_password"}}
             </a>
           {{end}}
         {{end}}

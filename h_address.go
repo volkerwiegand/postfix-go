@@ -24,6 +24,7 @@ type Address struct {
 	LocalPart     string      `gorm:"index"`
 	DomainName    string
 	DomainID      int         `gorm:"index"`
+	OtherEmail    string
 	Password      string
 	FirstPass     string
 	Admin         bool
@@ -117,7 +118,6 @@ func AddressPassword(password string) string {
 func AddressFindByID(id int, db *gorm.DB) *Address {
 	address := &Address{}
 	if err := db.First(address, id).Error; err != nil {
-		log.Printf("ERROR address %d not found", id)
 		return nil
 	}
 	return address
@@ -126,7 +126,6 @@ func AddressFindByID(id int, db *gorm.DB) *Address {
 func AddressFindByEmail(email string, db *gorm.DB) *Address {
 	address := &Address{}
 	if err := db.Where("email = ?", email).First(address).Error; err != nil {
-		log.Printf("ERROR email %s not found (%s)", email, err)
 		return nil
 	}
 	return address
@@ -204,7 +203,7 @@ func AddressEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		return
 	}
 
-	if !ctx.CurrentAddress.Admin {
+	if ctx.CurrentAddress.Admin == false {
 		// Non-Admins can do nothing but change their own poassword
 		ctx.Address = AddressFindByID(ctx.CurrentAddress.ID, db)
 		ctx.Address.AddressSetup(db)
@@ -263,93 +262,148 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		return
 	}
 
+	local_part  := r.FormValue("address_local_part")
+	email       := fmt.Sprintf("%s@%s", local_part, domain.Name)
+	admin       := r.FormValue("address_admin")
+	password    := r.FormValue("address_password")
+	other_email := r.FormValue("address_other_email")
+	//log.Printf("DEBUG LocalPart=%s DomainName=%s Admin=%s", local_part, domain.Name, admin)
+
 	alias_names := []string{}
 	for _, alias_name := range strings.Split(r.FormValue("address_alias_list"), "\n") {
 		alias_name = strings.TrimSpace(alias_name)
-		if alias_name != "" {
-			log.Printf("INFO  Alias: %v", alias_name)
-			alias_names = append(alias_names, alias_name)
+		if alias_name == "" || alias_name == local_part {
+			continue
 		}
+		if flash := AliasCheck(alias_name, domain.Name, id, db); flash != "" {
+			SetFlash(w, F_ERROR, flash)
+			http.Redirect(w, r, HomeURL, http.StatusFound)
+			return
+		}
+		log.Printf("INFO  Alias: %v", alias_name)
+		alias_names = append(alias_names, alias_name)
 	}
-	//log.Printf("INFO  AliasNames=%v", alias_names)
-
-	local_part := r.FormValue("address_local_part")
-	email      := fmt.Sprintf("%s@%s", local_part, domain.Name)
-	admin      := r.FormValue("address_admin")
-	password   := r.FormValue("address_password")
-	//log.Printf("INFO  LocalPart=%s DomainName=%s Admin=%s", local_part, domain.Name, admin)
+	//log.Printf("DEBUG AliasNames=%v", alias_names)
 
 	if id == 0 {
-		address := Address{
+		address := &Address{
 			LocalPart:  local_part,
 			DomainName: domain.Name,
 			Email:      email,
+			OtherEmail: other_email,
 			DomainID:   domain.ID,
 			Admin:      admin == "yes",
 			Password:   AddressPassword(password),
 			CreatedBy:  ctx.CurrentAddress.ID,
 			UpdatedBy:  ctx.CurrentAddress.ID,
 		}
-		if err := db.Create(&address).Error; err != nil {
+		if err := db.Create(address).Error; err != nil {
 			flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 			if strings.Index(err.Error(), "UNIQUE") >= 0 {
 				flash = fmt.Sprintf(t("flash_error_exists"), email)
 			}
 			SetFlash(w, F_ERROR, flash)
-		} else {
-			for _, alias_name := range alias_names {
-				AliasCreate(&address, alias_name, db, ctx.CurrentAddress.ID)
+			http.Redirect(w, r, HomeURL, http.StatusFound)
+			return
+		}
+
+		for _, alias_name := range alias_names {
+			if flash := AliasCreate(address, alias_name, db); flash != "" {
+				SetFlash(w, F_ERROR, flash)
+				http.Redirect(w, r, HomeURL, http.StatusFound)
+				return
 			}
-			flash := fmt.Sprintf(t("flash_created"), address.Email)
-			SetFlash(w, F_INFO, flash)
+		}
+
+		flash := fmt.Sprintf(t("flash_created"), address.Email)
+		SetFlash(w, F_INFO, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
+	}
+
+	address := AddressFindByID(id, db)
+	if address == nil {
+		flash := fmt.Sprintf(t("flash_address_not_found"), id)
+		SetFlash(w, F_ERROR, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
+	}
+
+	update := make(map[string]interface{})
+	if address.LocalPart != local_part {
+		update["local_part"] = local_part
+	}
+	if address.DomainID != domain.ID {
+		update["domain_name"] = domain.Name
+		update["domain_id"]   = domain.ID
+	}
+	if address.Email != email {
+		update["email"] = email
+	}
+	if address.OtherEmail != other_email {
+		update["other_email"] = other_email
+	}
+	if password != "" {
+		update["password"] = AddressPassword(password)
+	}
+	if admin == "yes" {
+		if address.Admin == false {
+			update["admin"] = true
 		}
 	} else {
-		address := AddressFindByID(id, db)
-		if address == nil {
-			flash := fmt.Sprintf(t("flash_address_not_found"), id)
-			SetFlash(w, F_ERROR, flash)
-		} else {
-			update := make(map[string]interface{})
-
-			if address.LocalPart != local_part {
-				update["local_part"] = local_part
-			}
-			if address.DomainID != domain.ID {
-				update["domain_name"] = domain.Name
-				update["domain_id"]   = domain.ID
-			}
-			if address.Email != email {
-				update["email"] = email
-			}
-			if password != "" {
-				update["password"] = AddressPassword(password)
-			}
-			if admin == "yes" {
-				if address.Admin == false {
-					update["admin"] = true
-				}
-			} else {
-				if address.Admin == true {
-					update["admin"] = false
-				}
-			}
-			update["updated_at"] = time.Now()
-			update["updated_by"] = ctx.CurrentAddress.ID
-
-			if err := db.Model(address).Updates(update).Error; err != nil {
-				flash := fmt.Sprintf(t("flash_error_text"), err.Error())
-				if strings.Index(err.Error(), "UNIQUE") >= 0 {
-					flash = fmt.Sprintf(t("flash_error_exists"), email)
-				}
-				SetFlash(w, F_ERROR, flash)
-			} else {
-				// TODO update all aliases?
-
-				flash := fmt.Sprintf(t("flash_updated"), address.Email)
-				SetFlash(w, F_INFO, flash)
-			}
+		if address.Admin == true {
+			update["admin"] = false
 		}
 	}
+	update["updated_at"] = time.Now()
+	update["updated_by"] = ctx.CurrentAddress.ID
+
+	if err := db.Model(address).Updates(update).Error; err != nil {
+		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
+		if strings.Index(err.Error(), "UNIQUE") >= 0 {
+			flash = fmt.Sprintf(t("flash_error_exists"), email)
+		}
+		SetFlash(w, F_ERROR, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
+	}
+
+	db.Where("address_id = ?", address.ID).Delete(&Alias{})
+	for _, alias_name := range alias_names {
+		if flash := AliasCreate(address, alias_name, db); flash != "" {
+			SetFlash(w, F_ERROR, flash)
+			http.Redirect(w, r, HomeURL, http.StatusFound)
+			return
+		}
+	}
+
+	flash := fmt.Sprintf(t("flash_updated"), address.Email)
+	SetFlash(w, F_INFO, flash)
+	http.Redirect(w, r, HomeURL, http.StatusFound)
+}
+
+func AddressPrint(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	t, _ := i18n.Tfunc(Language)
+	id, _ := strconv.Atoi(ps.ByName("id"))
+	log.Printf("INFO  GET /address/%d/print", id)
+
+	db := OpenDB(true)
+	defer CloseDB()
+
+	ctx := AddressContext(w, r, "address_print", true, db)
+	if !ctx.LoggedIn {
+		return
+	}
+
+	address := AddressFindByID(id, db)
+	if address == nil {
+		flash := fmt.Sprintf(t("flash_address_not_found"), id)
+		SetFlash(w, F_ERROR, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
+	}
+
+	// TODO print PDF password letter
 
 	http.Redirect(w, r, HomeURL, http.StatusFound)
 }
@@ -380,17 +434,23 @@ func AddressDelete(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		http.Redirect(w, r, HomeURL, http.StatusFound)
 		return
 	}
+
+	if err := db.Where("address_id = ?", address.ID).Delete(&Alias{}).Error; err != nil {
+		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
+		SetFlash(w, F_ERROR, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
+	}
+
 	email := address.Email
-
-	// TODO delete all aliases
-
 	if err := db.Delete(address).Error; err != nil {
 		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 		SetFlash(w, F_ERROR, flash)
-	} else {
-		flash := fmt.Sprintf(t("flash_deleted"), email)
-		SetFlash(w, F_INFO, flash)
+		http.Redirect(w, r, HomeURL, http.StatusFound)
+		return
 	}
 
+	flash := fmt.Sprintf(t("flash_deleted"), email)
+	SetFlash(w, F_INFO, flash)
 	http.Redirect(w, r, HomeURL, http.StatusFound)
 }
