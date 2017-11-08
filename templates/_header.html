@@ -60,7 +60,13 @@
             <a href="/logout" class="pure-button menu-button">
               <i class="fa fa-sign-out"></i>
               <br>
-              Logout
+              {{T "action_logout"}}
+            </a>
+            &nbsp;&nbsp;
+            <a href="/help/{{.Title}}" class="pure-button menu-button warning-button" target="_blank">
+              <i class="fa fa-question"></i>
+              <br>
+              {{T "action_help"}}
             </a>
           {{else}}
             {{T "not_logged_in"}}

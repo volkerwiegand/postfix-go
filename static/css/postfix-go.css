@@ -58,18 +58,14 @@ div.main {
   border-radius: 6px;
 }
 
-.context-button {
-  min-width: 10em;
-  text-align: right;
-  cursor: inherit;
-  color: black;
-  background: yellow;
-  font-weight: bold;
-}
-
 .success-button {
   color: white;
   background: green;
+}
+
+.warning-button {
+  color: black;
+  background: yellow;
 }
 
 .error-button {

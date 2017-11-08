@@ -2,17 +2,20 @@ package main
 
 import (
 	"os"
+	"io"
 	"log"
 	"fmt"
 	"time"
 	"strings"
 	"strconv"
 	"net/http"
+	"math/rand"
 	"golang.org/x/crypto/bcrypt"
 	"github.com/julienschmidt/httprouter"
 	"github.com/jinzhu/gorm"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"gopkg.in/gomail.v2"
+	"github.com/jung-kurt/gofpdf"
 )
 
 type Address struct {
@@ -33,6 +36,7 @@ type Address struct {
 	Domain        *Domain
 	Aliases       []Alias
 	AliasList     string      `sql:"-"`
+	ConfirmDelete string      `sql:"-"`
 }
 
 func AddressInit() {
@@ -62,7 +66,7 @@ func AddressInit() {
 			LocalPart:  local_part,
 			DomainName: domain.Name,
 			DomainID:   domain.ID,
-			Password:   AddressPassword(t("address_password_default")),
+			Password:   AddressEncrypt(t("address_password_default")),
 			Admin:      true,
 		}
 		if err := db.Create(&address).Error; err != nil {
@@ -91,6 +95,8 @@ func AddressInit() {
 }
 
 func (address *Address) AddressSetup(db *gorm.DB) {
+	t, _ := i18n.Tfunc(Language)
+
 	domain := &Domain{}
 	db.Find(domain, address.DomainID)
 	address.Domain = domain
@@ -108,12 +114,57 @@ func (address *Address) AddressSetup(db *gorm.DB) {
 		}
 		address.AliasList += alias.LocalPart
 	}
+
+	address.ConfirmDelete = fmt.Sprintf(t("delete_are_you_sure"), address.Email)
 }
 
-func AddressPassword(password string) string {
+func AddressEncrypt(password string) string {
 	pswd := []byte(password)
 	hash, _ := bcrypt.GenerateFromPassword(pswd, bcrypt.DefaultCost)
 	return string(hash)
+}
+
+func AddressRandom(length int) string {
+	seed := rand.New(rand.NewSource(time.Now().UnixNano()))
+	cset := "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjklmnpqrstuvwxyz23456789"
+
+	buff := make([]byte, length)
+	for index := range buff {
+		buff[index] = cset[seed.Intn(len(cset))]
+	}
+
+	return string(buff)
+}
+
+func AddressSendEmail(ctx Context) {
+	t, _ := i18n.Tfunc(Language)
+
+	mail := gomail.NewMessage()
+	mail.SetHeader("From",    ctx.CurrentAddress.Email)
+	mail.SetHeader("To",      ctx.Address.OtherEmail)
+	mail.SetHeader("Subject", fmt.Sprintf(t("address_email_subject"), ctx.Address.Email))
+
+	tmpl := fmt.Sprintf("password_email_%s", Language)
+	mail.AddAlternativeWriter("text/plain", func(w io.Writer) error {
+		return Templates.ExecuteTemplate(w, tmpl, ctx)
+	})
+
+	dial := gomail.NewDialer(SMTP_Host, SMTP_Port, SMTP_Username, SMTP_Password)
+	if err := dial.DialAndSend(mail); err != nil {
+		log.Printf("ERROR AddressUpdate:DialAndSend: %s", err)
+	}
+}
+
+func AddressPdfLetter(w http.ResponseWriter, ctx Context, first_pass string) {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+	pdf.SetFont("Arial", "B", 16)
+
+	pdf.Cell(40, 10, "Hello, world")
+
+	if err := pdf.Output(w); err != nil {
+		log.Printf("ERROR AddressPdfLetter:Output: %s", err)
+	}
 }
 
 func AddressFindByID(id int, db *gorm.DB) *Address {
@@ -146,7 +197,11 @@ func AddressIsLoggedIn(r *http.Request, db *gorm.DB) (*Address, bool) {
 
 func AddressContext(w http.ResponseWriter, r *http.Request, title string, admin bool, db *gorm.DB) Context {
 	t, _ := i18n.Tfunc(Language)
+
 	ctx := Context{Title: title, CurrentAddress: &Address{}, LoggedIn: false}
+	if db == nil {
+		return ctx
+	}
 
 	if address, ok := AddressIsLoggedIn(r, db); ok {
 		if address.Admin {
@@ -241,7 +296,7 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	if !ctx.CurrentAddress.Admin {
 		password := r.FormValue("address_password")
 		if password != "" {
-			password = AddressPassword(password)
+			password = AddressEncrypt(password)
 			if err := db.Model(ctx.CurrentAddress).Update("password", password).Error; err != nil {
 				flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 				SetFlash(w, F_ERROR, flash)
@@ -268,6 +323,9 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	admin       := r.FormValue("address_admin")
 	password    := r.FormValue("address_password")
 	other_email := r.FormValue("address_other_email")
+
+	first_pass := AddressRandom(20)
+
 	//log.Printf("DEBUG LocalPart=%s DomainName=%s Admin=%s", local_part, domain.Name, admin)
 
 	alias_names := []string{}
@@ -286,21 +344,6 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 	//log.Printf("DEBUG AliasNames=%v", alias_names)
 
-	if other_email != "" {
-		mail := gomail.NewMessage()
-		mail.SetHeader("From",    ctx.CurrentAddress.Email)
-		mail.SetHeader("To",      other_email)
-		mail.SetHeader("Subject", fmt.Sprintf(t("address_email_subject"), email))
-		mail.SetBody("text/plain", "Hello!")
-		//mail.AddAlternativeWriter("text/plain", func(w io.Writer) error {
-		//	return tmpl.Execute(w, "Bob")
-		//})
-		dial := gomail.NewDialer(SMTP_Host, SMTP_Port, SMTP_Username, SMTP_Password)
-		if err := dial.DialAndSend(mail); err != nil {
-			log.Printf("ERROR AddressUpdate:DialAndSend: %s", err)
-		}
-	}
-
 	if id == 0 {
 		address := &Address{
 			LocalPart:  local_part,
@@ -309,7 +352,8 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			OtherEmail: other_email,
 			DomainID:   domain.ID,
 			Admin:      admin == "yes",
-			Password:   AddressPassword(password),
+			Password:   AddressEncrypt(password),
+			FirstPass:  AddressEncrypt(first_pass),
 			CreatedBy:  ctx.CurrentAddress.ID,
 			UpdatedBy:  ctx.CurrentAddress.ID,
 		}
@@ -329,6 +373,11 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 				http.Redirect(w, r, HomeURL, http.StatusFound)
 				return
 			}
+		}
+
+		if other_email != "" {
+			ctx.Address = address
+			AddressSendEmail(ctx)
 		}
 
 		flash := fmt.Sprintf(t("flash_created"), address.Email)
@@ -360,7 +409,7 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		update["other_email"] = other_email
 	}
 	if password != "" {
-		update["password"] = AddressPassword(password)
+		update["password"] = AddressEncrypt(password)
 	}
 	if admin == "yes" {
 		if address.Admin == false {
@@ -419,9 +468,9 @@ func AddressPrint(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		return
 	}
 
-	// TODO print PDF password letter
+	AddressPdfLetter(w, ctx, address.FirstPass)
 
-	http.Redirect(w, r, HomeURL, http.StatusFound)
+	//http.Redirect(w, r, HomeURL, http.StatusFound)
 }
 
 func AddressDelete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {

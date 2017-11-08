@@ -31,7 +31,6 @@ type Context struct {
 	CsrfField      template.HTML
 	StyleSheets    []string
 	JavaScripts    []string
-	PriButton      string
 	Flash          string
 	CurrentAddress *Address
 	LoggedIn       bool
@@ -164,6 +163,7 @@ func main() {
 	r.GET("/login",              LoginLoginGet)
 	r.POST("/login",             LoginLoginPost)
 	r.GET("/logout",             LoginLogout)
+	r.GET("/help/:page",         HelpShow)
 	r.GET("/domain",             DomainCreate)
 	r.GET("/domain/:id",         DomainEdit)
 	r.POST("/domain/:id",        DomainUpdate)

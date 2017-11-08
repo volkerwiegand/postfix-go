@@ -44,14 +44,8 @@ func HomeIndex(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		log.Printf("ERROR HomeIndex:Domains: %s", err)
 	} else {
 		for _, domain := range domains {
-			empty := true
-			for _, address := range addresses {
-				if address.DomainID == domain.ID {
-					empty = false
-					break
-				}
-			}
-			if empty {
+			domain.DomainSetup(db)
+			if len(domain.Addresses) == 0 {
 				ctx.Domains = append(ctx.Domains, domain)
 			}
 		}

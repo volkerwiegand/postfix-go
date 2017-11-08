@@ -38,12 +38,19 @@
         <span class="pure-form-message-inline">{{T "address_other_email_hint"}}</span>
       </div>
 
-      {{if eq .CurrentAddress.ID .Address.ID}}
-        <div class="pure-control-group">
-          <label for="address_password">{{T "address_password"}}</label>
-          <input id="address_password" type="password" name="address_password">
-        </div>
-      {{end}}
+      <div class="pure-control-group">
+        <label for="address_first_pass">{{T "address_first_pass"}}</label>
+        <select id="address_first_pass" name="address_first_pass">
+          {{if eq 0 .Address.ID}}
+            <option value="yes" selected>{{T "positive"}}</option>
+            <option value="no">{{T "negative"}}</option>
+          {{else}}
+            <option value="yes">{{T "positive"}}</option>
+            <option value="no" selected>{{T "negative"}}</option>
+          {{end}}
+        </select>
+        <span class="pure-form-message-inline">{{T "address_first_pass_hint"}}</span>
+      </div>
 
       <div class="pure-control-group">
         <label for="address_admin">{{T "address_admin"}}</label>
@@ -66,11 +73,12 @@
 
       <div class="pure-control-group">
       <div class="pure-controls">
-        <button type="submit" class="pure-button menu-button success-button">
+        <button type="submit" class="pure-button menu-button success-button" value="save">
           <i class="fa fa-check"></i>
           <br>
           {{T "action_save"}}
         </button>
+
         &nbsp;&nbsp;
         <a href="/" class="pure-button menu-button">
           <i class="fa fa-times"></i>
@@ -87,8 +95,9 @@
               <br>
               {{T "action_delete"}}
             </a>
+
             &nbsp;&nbsp;
-            <a href="/address/{{.Address.ID}}/print" class="pure-button menu-button">
+            <a href="/address/{{.Address.ID}}/print" class="pure-button menu-button" target="_blank">
               <i class="fa fa-print"></i>
               <br>
               {{T "address_password"}}

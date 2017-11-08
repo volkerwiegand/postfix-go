@@ -24,6 +24,7 @@ type Domain struct {
 	Addresses     []Address
 	AddressCount  int         `sql:"-"`
 	Selected      bool        `sql:"-"`
+	ConfirmDelete string      `sql:"-"`
 }
 
 func DomainInit() {
@@ -55,11 +56,15 @@ func DomainInit() {
 }
 
 func (domain *Domain) DomainSetup(db *gorm.DB) {
+	t, _ := i18n.Tfunc(Language)
+
 	addresses := []Address{}
 	if err := db.Where("domain_id = ?", domain.ID).Order("local_part").Find(&addresses).Error; err != nil {
 		log.Printf("ERROR DomainSetup:Addresses: %s", err)
 	}
 	domain.Addresses = addresses
+
+	domain.ConfirmDelete = fmt.Sprintf(t("delete_are_you_sure"), domain.Name)
 }
 
 func DomainFindByID(id int, db *gorm.DB) *Domain {
