@@ -9,6 +9,7 @@ LOC := $(wildcard locales/*.json)
 postfix-go: $(SRC) $(TPL) $(LOC)
 	ctags *.go
 	go build
+	md5sum postfix-go | cut -c1-32 | tee postfix-go.md5
 
 tags: $(SRC) $(TPL) $(LOC)
 	ctags *.go
@@ -24,7 +25,7 @@ clean:
 	rm -f tags postfix-go.sql
 
 real-clean: clean
-	rm -f postfix-go
+	rm -f postfix-go postfix-go.md5
 
 fresh: clean postfix-go
 	./postfix-go -v
