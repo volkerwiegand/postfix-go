@@ -24,23 +24,11 @@
           <br>
           {{T "action_save"}}
         </button>
-        &nbsp;&nbsp;
         <a href="/" class="pure-button menu-button">
           <i class="fa fa-times"></i>
           <br>
           {{T "action_cancel"}}
         </a>
-        &nbsp;&nbsp;
-        {{if ne 0 .Domain.ID}}
-          {{if not .Domain.Addresses}}
-            <a href="/domain/{{.Domain.ID}}/delete" class="pure-button menu-button error-button"
-                    onclick="return confirm('{{T "are_you_sure"}}');">
-              <i class="fa fa-trash"></i>
-              <br>
-              {{T "action_delete"}}
-            </a>
-          {{end}}
-        {{end}}
       </div>
     </fieldset>
   </form>

@@ -173,6 +173,8 @@ func main() {
 	r.POST("/address/:id",       AddressUpdate)
 	r.GET("/address/:id/print",  AddressPrint)
 	r.GET("/address/:id/delete", AddressDelete)
+	r.GET("/password",           PasswordEdit)
+	r.POST("/password",          PasswordUpdate)
 	// TODO audit trail
 
 	srv := &http.Server{

@@ -20,7 +20,13 @@
                 <a href="/domain/{{.DomainID}}">{{.DomainName}}</a>
               </td>
               <td>
+                {{if eq $my_id .ID}}
+                  <b>
+                {{end}}
                 <a href="/address/{{.ID}}">{{.Email}}</a>
+                {{if eq $my_id .ID}}
+                  </b>
+                {{end}}
                 {{if .Admin}}
                   ({{T "address_admin"}})
                 {{end}}
@@ -32,12 +38,18 @@
                 {{end}}
               </td>
               <td>
+                {{if eq $my_id .ID}}
+                  <a href="/password" class="pure-button menu-button">
+                    <i class="fa fa-key"></i>
+                    <br>
+                    {{T "password_password"}}
+                  </a>
+                {{else}}
                   <a href="/address/{{.ID}}/print" class="pure-button menu-button" target="_blank">
                     <i class="fa fa-print"></i>
                     <br>
-                    {{T "address_password"}}
+                    {{T "password_password"}}
                   </a>
-                {{if ne $my_id .ID}}
                   <a href="/address/{{.ID}}/delete" class="pure-button menu-button error-button"
                           onclick="return confirm('{{.ConfirmDelete}}');">
                     <i class="fa fa-trash"></i>

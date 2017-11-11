@@ -56,13 +56,11 @@
         <span>
           {{if .LoggedIn}}
             <b>{{.CurrentAddress.Email}}</b>
-            &nbsp;&nbsp;
             <a href="/logout" class="pure-button menu-button">
               <i class="fa fa-sign-out"></i>
               <br>
               {{T "action_logout"}}
             </a>
-            &nbsp;&nbsp;
             <a href="/help/{{.Title}}" class="pure-button menu-button warning-button" target="_blank">
               <i class="fa fa-question"></i>
               <br>

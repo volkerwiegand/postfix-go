@@ -22,7 +22,7 @@ func HomeIndex(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return	// already redirected to /login if not logged in
 	}
 
-	if !ctx.CurrentAddress.Admin {
+	if ctx.CurrentAddress.Admin == false {
 		redirect := fmt.Sprintf("/address/%d", ctx.CurrentAddress.ID)
 		http.Redirect(w, r, redirect, http.StatusFound)
 		return

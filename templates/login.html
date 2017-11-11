@@ -14,22 +14,21 @@
           </div>
 
           <div class="pure-control-group">
-            <label for="login_password">{{T "address_password"}}</label>
+            <label for="login_password">{{T "password_password"}}</label>
             <input id="login_password" type="password" name="login_password">
           </div>
 
           <div class="pure-controls">
-            <button type="submit" class="pure-button menu-button success-button">
+            <button type="submit" name="login_action" value="login" class="pure-button menu-button success-button">
               <i class="fa fa-check"></i>
               <br>
               {{T "login_submit"}}
             </button>
-            &nbsp;&nbsp;
-            <a href="/" class="pure-button menu-button">
+            <button type="submit" name="login_action" value="reset" class="pure-button menu-button">
               <i class="fa fa-question"></i>
               <br>
-              {{T "address_password"}}
-            </a>
+              {{T "password_password"}}
+            </button>
           </div>
         </fieldset>
       </form>

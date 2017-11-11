@@ -39,20 +39,6 @@
       </div>
 
       <div class="pure-control-group">
-        <label for="address_first_pass">{{T "address_first_pass"}}</label>
-        <select id="address_first_pass" name="address_first_pass">
-          {{if eq 0 .Address.ID}}
-            <option value="yes" selected>{{T "positive"}}</option>
-            <option value="no">{{T "negative"}}</option>
-          {{else}}
-            <option value="yes">{{T "positive"}}</option>
-            <option value="no" selected>{{T "negative"}}</option>
-          {{end}}
-        </select>
-        <span class="pure-form-message-inline">{{T "address_first_pass_hint"}}</span>
-      </div>
-
-      <div class="pure-control-group">
         <label for="address_admin">{{T "address_admin"}}</label>
         <select id="address_admin" name="address_admin">
           {{if .Address.Admin}}
@@ -78,32 +64,11 @@
           <br>
           {{T "action_save"}}
         </button>
-
-        &nbsp;&nbsp;
         <a href="/" class="pure-button menu-button">
           <i class="fa fa-times"></i>
           <br>
           {{T "action_cancel"}}
         </a>
-
-        {{if ne 0 .Address.ID}}
-          {{if ne .CurrentAddress.ID .Address.ID}}
-            &nbsp;&nbsp;
-            <a href="/address/{{.Address.ID}}/delete" class="pure-button menu-button error-button"
-                    onclick="return confirm('{{T "are_you_sure"}}');">
-              <i class="fa fa-trash"></i>
-              <br>
-              {{T "action_delete"}}
-            </a>
-
-            &nbsp;&nbsp;
-            <a href="/address/{{.Address.ID}}/print" class="pure-button menu-button" target="_blank">
-              <i class="fa fa-print"></i>
-              <br>
-              {{T "address_password"}}
-            </a>
-          {{end}}
-        {{end}}
       </div>
     </fieldset>
   </form>

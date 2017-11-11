@@ -39,6 +39,6 @@ update:
 	go get -u github.com/jinzhu/gorm/dialects/sqlite
 	go get -u github.com/go-sql-driver/mysql
 	go get -u github.com/nicksnyder/go-i18n/i18n
-	go get -u github.com/jung-kurt/gofpdf
 	go get -u gopkg.in/gomail.v2
+	go get -u github.com/jung-kurt/gofpdf
 
