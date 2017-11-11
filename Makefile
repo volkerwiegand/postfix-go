@@ -25,10 +25,13 @@ clean:
 	rm -f tags postfix-go.sql
 
 real-clean: clean
-	rm -f postfix-go postfix-go.md5
+	rm -f postfix-go postfix-go.md5 postfix-go.tgz
 
 fresh: clean postfix-go
 	./postfix-go -v
+
+dist: postfix-go
+	tar cvzf postfix-go.tgz postfix-go postfix-go.md5 locales static templates
 
 update:
 	go get -u golang.org/x/crypto/bcrypt

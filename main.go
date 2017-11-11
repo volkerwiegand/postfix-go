@@ -150,7 +150,7 @@ func main() {
 			return tm.Format(t("date_time"))
 		},
 	}
-	Templates = template.Must(template.New("").Funcs(funcMap).ParseGlob("templates/*"))
+	Templates = template.Must(template.New("").Funcs(funcMap).ParseGlob("./templates/*"))
 
 	//
 	// Setup the web server and router
