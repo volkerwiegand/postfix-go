@@ -150,7 +150,7 @@ func AddressContext(w http.ResponseWriter, r *http.Request, title string, need_a
 	}
 
 	if address, ok := AddressIsLoggedIn(r, db); ok {
-		if address.Admin || !need_admin {
+		if address.Admin == true || need_admin == false {
 			ctx.CurrentAddress = address
 			ctx.LoggedIn = true
 			return ctx
@@ -198,17 +198,8 @@ func AddressEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "address_edit", false, db)
+	ctx := AddressContext(w, r, "address_edit", true, db)
 	if !ctx.LoggedIn {
-		return
-	}
-
-	if ctx.CurrentAddress.Admin == false {
-		// Non-Admins can do nothing but change their own poassword
-		ctx.Address = AddressFindByID(ctx.CurrentAddress.ID, db)
-		ctx.Address.AddressSetup(db)
-		ctx.Domains = DomainFindAll(db, ctx.Address.DomainName)
-		RenderHtml(w, r, "address_password", ctx)
 		return
 	}
 
@@ -232,40 +223,8 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "address_update", false, db)
+	ctx := AddressContext(w, r, "address_update", true, db)
 	if !ctx.LoggedIn {
-		return
-	}
-
-	if ctx.CurrentAddress.Admin == false {
-		password     := r.FormValue("address_password")
-		confirmation := r.FormValue("address_confirmation")
-		redirect     := fmt.Sprintf("/address/%d", id)
-
-		if password == "" {
-			flash := t("flash_missing_password")
-			SetFlash(w, F_ERROR, flash)
-			http.Redirect(w, r, redirect, http.StatusFound)
-			return
-		}
-		if password != confirmation {
-			flash := t("flash_bad_confirmation")
-			SetFlash(w, F_ERROR, flash)
-			http.Redirect(w, r, redirect, http.StatusFound)
-			return
-		}
-
-		password = PasswordEncrypt(password)
-		if err := db.Model(ctx.CurrentAddress).Update("password", password).Error; err != nil {
-			flash := fmt.Sprintf(t("flash_error_text"), err.Error())
-			SetFlash(w, F_ERROR, flash)
-			http.Redirect(w, r, LogoutURL, http.StatusFound)
-			return
-		}
-
-		flash := fmt.Sprintf(t("flash_updated"), t("address_password"))
-		SetFlash(w, F_INFO, flash)
-		http.Redirect(w, r, LogoutURL, http.StatusFound)
 		return
 	}
 
@@ -281,7 +240,6 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	local_part  := r.FormValue("address_local_part")
 	email       := fmt.Sprintf("%s@%s", local_part, domain.Name)
 	admin       := r.FormValue("address_admin")
-	password    := r.FormValue("address_password")
 	other_email := r.FormValue("address_other_email")
 	//log.Printf("DEBUG LocalPart=%s DomainName=%s Admin=%s", local_part, domain.Name, admin)
 
@@ -309,7 +267,6 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			OtherEmail: other_email,
 			DomainID:   domain.ID,
 			Admin:      admin == "yes",
-			Password:   PasswordEncrypt(password),
 			CreatedBy:  ctx.CurrentAddress.ID,
 			UpdatedBy:  ctx.CurrentAddress.ID,
 		}
@@ -358,9 +315,6 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	}
 	if address.OtherEmail != other_email {
 		update["other_email"] = other_email
-	}
-	if password != "" {
-		update["password"] = PasswordEncrypt(password)
 	}
 	if admin == "yes" {
 		if address.Admin == false {

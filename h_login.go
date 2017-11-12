@@ -13,10 +13,15 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-const (
-	LoginURL  = "/login"
-	LogoutURL = "/logout"
+var (
+	LoginURL  string
+	LogoutURL string
 )
+
+func LoginInit() {
+	LoginURL  = Web_Root + "/login"
+	LogoutURL = Web_Root + "/logout"
+}
 
 func LoginEmail(address *Address, db *gorm.DB) error {
 	t, _ := i18n.Tfunc(Language)

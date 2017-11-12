@@ -14,16 +14,17 @@
         </thead>
         <tbody>
           {{$my_id := .CurrentAddress.ID}}
+          {{$root  := .Web_Root}}
           {{range .Addresses}}
             <tr>
               <td>
-                <a href="/domain/{{.DomainID}}">{{.DomainName}}</a>
+                <a href="{{$root}}/domain/{{.DomainID}}">{{.DomainName}}</a>
               </td>
               <td>
                 {{if eq $my_id .ID}}
                   <b>
                 {{end}}
-                <a href="/address/{{.ID}}">{{.Email}}</a>
+                <a href="{{$root}}/address/{{.ID}}">{{.Email}}</a>
                 {{if eq $my_id .ID}}
                   </b>
                 {{end}}
@@ -39,18 +40,18 @@
               </td>
               <td>
                 {{if eq $my_id .ID}}
-                  <a href="/password" class="pure-button menu-button">
+                  <a href="{{$root}}/password" class="pure-button menu-button">
                     <i class="fa fa-key"></i>
                     <br>
                     {{T "password_password"}}
                   </a>
                 {{else}}
-                  <a href="/address/{{.ID}}/print" class="pure-button menu-button" target="_blank">
+                  <a href="{{$root}}/address/{{.ID}}/print" class="pure-button menu-button" target="_blank">
                     <i class="fa fa-print"></i>
                     <br>
                     {{T "password_password"}}
                   </a>
-                  <a href="/address/{{.ID}}/delete" class="pure-button menu-button error-button"
+                  <a href="{{$root}}/address/{{.ID}}/delete" class="pure-button menu-button error-button"
                           onclick="return confirm('{{.ConfirmDelete}}');">
                     <i class="fa fa-trash"></i>
                     <br>
@@ -63,14 +64,14 @@
           {{range .Domains}}
             <tr>
               <td>
-                <a href="/domain/{{.ID}}">{{.Name}}</a>
+                <a href="{{$root}}/domain/{{.ID}}">{{.Name}}</a>
               </td>
               <td>
               </td>
               <td>
               </td>
               <td>
-                <a href="/domain/{{.ID}}/delete" class="pure-button menu-button error-button"
+                <a href="{{$root}}/domain/{{.ID}}/delete" class="pure-button menu-button error-button"
                           onclick="return confirm('{{.ConfirmDelete}}');">
                   <i class="fa fa-trash"></i>
                   <br>
@@ -84,12 +85,12 @@
 
       <br>
 
-      <a href="/domain" class="pure-button menu-button success-button">
+      <a href="{{.Web_Root}}/domain" class="pure-button menu-button success-button">
         <i class="fa fa-server"></i>
         <br>
         {{T "action_new_domain"}}
       </a>
-      <a href="/address" class="pure-button menu-button success-button">
+      <a href="{{.Web_Root}}/address" class="pure-button menu-button success-button">
         <i class="fa fa-user"></i>
         <br>
         {{T "action_new_address"}}

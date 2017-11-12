@@ -2,16 +2,21 @@ package main
 
 import (
 	"log"
-	"fmt"
 	"net/http"
 	"github.com/julienschmidt/httprouter"
+	"github.com/nicksnyder/go-i18n/i18n"
 )
 
-const (
-	HomeURL = "/"
+var (
+	HomeURL string
 )
+
+func HomeInit() {
+	HomeURL = Web_Root + "/"
+}
 
 func HomeIndex(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	t, _ := i18n.Tfunc(Language)
 	log.Printf("INFO  GET /")
 
 	db := OpenDB(true)
@@ -23,8 +28,8 @@ func HomeIndex(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 
 	if ctx.CurrentAddress.Admin == false {
-		redirect := fmt.Sprintf("/address/%d", ctx.CurrentAddress.ID)
-		http.Redirect(w, r, redirect, http.StatusFound)
+		SetFlash(w, F_INFO, t("flash_login_update"))
+		http.Redirect(w, r, PasswordURL, http.StatusFound)
 		return
 	}
 

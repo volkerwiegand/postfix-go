@@ -12,9 +12,13 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-const (
-	PasswordURL = "/password"
+var (
+	PasswordURL string
 )
+
+func PasswordInit() {
+	PasswordURL = Web_Root + "/password"
+}
 
 func PasswordEncrypt(password string) string {
 	pswd := []byte(password)
