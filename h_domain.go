@@ -101,12 +101,13 @@ func DomainFindAll(db *gorm.DB, name string) []Domain {
 }
 
 func DomainCreate(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	log.Printf("INFO  CREATE /domain")
+	log.Printf("INFO  GET /domain")
+	prefix := ""
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "domain_create", true, db)
+	ctx := AddressContext(w, r, "domain_create", true, prefix, db)
 	if !ctx.LoggedIn {
 		return
 	}
@@ -123,12 +124,13 @@ func DomainCreate(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 func DomainEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
 	id, _ := strconv.Atoi(ps.ByName("id"))
-	log.Printf("INFO  EDIT /domain/%d", id)
+	log.Printf("INFO  GET /domain/%d", id)
+	prefix := "../"
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "domain_edit", true, db)
+	ctx := AddressContext(w, r, "domain_edit", true, prefix, db)
 	if !ctx.LoggedIn {
 		return
 	}
@@ -136,7 +138,7 @@ func DomainEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if ctx.Domain = DomainFindByID(id, db); ctx.Domain == nil {
 		flash := fmt.Sprintf(t("flash_domain_not_found"), id)
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, HomeURL, http.StatusFound)
+		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 		return
 	}
 	ctx.Domain.DomainSetup(db)
@@ -147,12 +149,13 @@ func DomainEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 func DomainUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
 	id, _ := strconv.Atoi(ps.ByName("id"))
-	log.Printf("INFO  UPDATE /domain/%d", id)
+	log.Printf("INFO  POST /domain/%d", id)
+	prefix := "../"
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "domain_update", true, db)
+	ctx := AddressContext(w, r, "domain_update", true, prefix, db)
 	if !ctx.LoggedIn {
 		return
 	}
@@ -171,13 +174,13 @@ func DomainUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 				flash = fmt.Sprintf(t("flash_error_exists"), name)
 			}
 			SetFlash(w, F_ERROR, flash)
-			http.Redirect(w, r, HomeURL, http.StatusFound)
+			http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 			return
 		}
 
 		flash := fmt.Sprintf(t("flash_created"), domain.Name)
 		SetFlash(w, F_INFO, flash)
-		http.Redirect(w, r, HomeURL, http.StatusFound)
+		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 		return
 	}
 
@@ -185,12 +188,12 @@ func DomainUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	if domain == nil {
 		flash := fmt.Sprintf(t("flash_domain_not_found"), id)
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, HomeURL, http.StatusFound)
+		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 		return
 	}
 
 	if domain.Name == name {
-		http.Redirect(w, r, HomeURL, http.StatusFound)
+		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 		return
 	}
 
@@ -205,7 +208,7 @@ func DomainUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 			flash = fmt.Sprintf(t("flash_error_exists"), name)
 		}
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, HomeURL, http.StatusFound)
+		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 		return
 	}
 
@@ -213,7 +216,7 @@ func DomainUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	if err := db.Where("domain_id = ?", domain.ID).Find(&addresses).Error; err != nil {
 		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, HomeURL, http.StatusFound)
+		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 		return
 	}
 	for index, _ := range addresses {
@@ -230,7 +233,7 @@ func DomainUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	if err := db.Where("domain_id = ?", domain.ID).Find(&aliases).Error; err != nil {
 		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, HomeURL, http.StatusFound)
+		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 		return
 	}
 	for index, _ := range aliases {
@@ -239,7 +242,7 @@ func DomainUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 		if destination == nil {
 			flash := fmt.Sprintf(t("flash_address_not_found"), alias.AddressID)
 			SetFlash(w, F_ERROR, flash)
-			http.Redirect(w, r, HomeURL, http.StatusFound)
+			http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 			return
 		}
 		db.Model(alias).Updates(Alias{
@@ -253,18 +256,19 @@ func DomainUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 
 	flash := fmt.Sprintf(t("flash_updated"), domain.Name)
 	SetFlash(w, F_INFO, flash)
-	http.Redirect(w, r, HomeURL, http.StatusFound)
+	http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 }
 
 func DomainDelete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
 	id, _ := strconv.Atoi(ps.ByName("id"))
-	log.Printf("INFO  DELETE /domain/%d", id)
+	log.Printf("INFO  GET /domain/%d/delete", id)
+	prefix := "../../"
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "domain_delete", true, db)
+	ctx := AddressContext(w, r, "domain_delete", true, prefix, db)
 	if !ctx.LoggedIn {
 		return
 	}
@@ -273,7 +277,7 @@ func DomainDelete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	if domain == nil {
 		flash := fmt.Sprintf(t("flash_domain_not_found"), id)
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, HomeURL, http.StatusFound)
+		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 		return
 	}
 	name := domain.Name
@@ -282,18 +286,18 @@ func DomainDelete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	if len(domain.Addresses) > 0 {
 		flash := fmt.Sprintf(t("flash_domain_not_empty"), name)
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, HomeURL, http.StatusFound)
+		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 		return
 	}
 
 	if err := db.Delete(domain).Error; err != nil {
 		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, HomeURL, http.StatusFound)
+		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 		return
 	}
 
 	flash := fmt.Sprintf(t("flash_deleted"), name)
 	SetFlash(w, F_INFO, flash)
-	http.Redirect(w, r, HomeURL, http.StatusFound)
+	http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 }

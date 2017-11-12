@@ -1,9 +1,13 @@
 package main
 
 import (
+	"os"
+	"os/exec"
 	"log"
 	"fmt"
 	"time"
+	"strings"
+	"bytes"
 	"net/http"
 	"math/rand"
 	"golang.org/x/crypto/bcrypt"
@@ -12,18 +16,26 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-var (
-	PasswordURL string
+const (
+	PasswordURL = "password"
 )
 
-func PasswordInit() {
-	PasswordURL = Web_Root + "/password"
-}
-
-func PasswordEncrypt(password string) string {
+func PasswordBcrypt(_, password string) string {
 	pswd := []byte(password)
 	hash, _ := bcrypt.GenerateFromPassword(pswd, bcrypt.DefaultCost)
 	return string(hash)
+}
+
+func PasswordSha512(address, password string) string {
+	cmd := exec.Command("doveadm", "pw", "-s", "SHA512-CRYPT", "-u", address, "-p", password)
+	out := bytes.Buffer{}
+	cmd.Stdout = &out
+	if err := cmd.Run(); err != nil {
+		log.Printf("FATAL PasswordEncrypt:Run: %s", err)
+		os.Exit(1)
+	}
+	hash := strings.TrimSpace(strings.TrimPrefix(out.String(), "{SHA512-CRYPT}"))
+	return hash
 }
 
 func PasswordRandom(length int) string {
@@ -38,7 +50,7 @@ func PasswordRandom(length int) string {
 	return string(buff)
 }
 
-func PasswordLetter(w http.ResponseWriter, ctx Context, first_pass string) {
+func PasswordLetter(w http.ResponseWriter, ctx Context, initial string) {
 	t, _ := i18n.Tfunc(Language)
 
 	title := fmt.Sprintf(t("address_email_subject"), ctx.Address.Email)
@@ -51,10 +63,10 @@ func PasswordLetter(w http.ResponseWriter, ctx Context, first_pass string) {
 	pdf.Write(14, title + "\n")
 
 	pdf.SetFont("arial", "", 14)
-	pdf.Write(14, t("password_email_first"))
+	pdf.Write(14, t("password_email_initial"))
 
 	pdf.SetFont("courier", "B", 14)
-	pdf.Write(14, first_pass + "\n")
+	pdf.Write(14, initial + "\n")
 
 	pdf.SetFont("arial", "", 14)
 	pdf.Write(14, t("password_email_info"))
@@ -65,12 +77,13 @@ func PasswordLetter(w http.ResponseWriter, ctx Context, first_pass string) {
 }
 
 func PasswordEdit(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	log.Printf("INFO  EDIT /password")
+	log.Printf("INFO  GET /password")
+	prefix := ""
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "password_edit", false, db)
+	ctx := AddressContext(w, r, "password_edit", false, prefix, db)
 	if !ctx.LoggedIn {
 		return
 	}
@@ -80,12 +93,13 @@ func PasswordEdit(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 func PasswordUpdate(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
-	log.Printf("INFO  UPDATE /password")
+	log.Printf("INFO  POST /password")
+	prefix := ""
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "password_update", false, db)
+	ctx := AddressContext(w, r, "password_update", false, prefix, db)
 	if !ctx.LoggedIn {
 		return
 	}
@@ -96,29 +110,30 @@ func PasswordUpdate(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	if password == "" {
 		flash := t("flash_missing_password")
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, PasswordURL, http.StatusFound)
+		http.Redirect(w, r, prefix + PasswordURL, http.StatusFound)
 		return
 	}
 	if password != confirmation {
 		flash := t("flash_bad_confirmation")
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, PasswordURL, http.StatusFound)
+		http.Redirect(w, r, prefix + PasswordURL, http.StatusFound)
 		return
 	}
 
 	update := make(map[string]interface{})
-	update["password"]   = PasswordEncrypt(password)
+	update["bcrypt"] = PasswordBcrypt(ctx.CurrentAddress.Email, password)
+	update["sha512"] = PasswordSha512(ctx.CurrentAddress.Email, password)
 	update["updated_at"] = time.Now()
 	update["updated_by"] = ctx.CurrentAddress.ID
 
 	if err := db.Model(ctx.CurrentAddress).Updates(update).Error; err != nil {
 		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, LogoutURL, http.StatusFound)
+		http.Redirect(w, r, prefix + LogoutURL, http.StatusFound)
 		return
 	}
 
 	flash := fmt.Sprintf(t("flash_updated"), t("address_password"))
 	SetFlash(w, F_INFO, flash)
-	http.Redirect(w, r, LogoutURL, http.StatusFound)
+	http.Redirect(w, r, prefix + LogoutURL, http.StatusFound)
 }

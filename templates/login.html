@@ -3,8 +3,8 @@
 
   <div class="main">
     <div class="login-form">
-      <form class="pure-form pure-form-aligned" action="{{.Web_Root}}/login" method="POST" accept-charset="UTF-8">
-        <img src="{{.Web_Root}}/static/img/Logo.png" alt="Postfix Logo" height="92" width="133">
+      <form class="pure-form pure-form-aligned" action="{{.Prefix}}login" method="POST" accept-charset="UTF-8">
+        <img src="{{.Prefix}}static/img/Logo.png" alt="Postfix Logo" height="92" width="133">
         {{.CsrfField}}
 
         <fieldset>

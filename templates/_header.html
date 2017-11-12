@@ -1,5 +1,4 @@
 {{- define "header" -}}
-{{- $root := .Web_Root -}}
 <!DOCTYPE html>
 <html lang="{{.Language}}">
   <head>
@@ -8,26 +7,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Postfix Virtual Domain and Email Admin">
     <meta name="author" content="Volker Wiegand">
-    <link rel="shortcut icon" href="{{.Web_Root}}/static/img/favicon.ico">
+    <link rel="shortcut icon" href="{{.Prefix}}static/img/favicon.ico">
     <title>{{T .Title}} - Postfix-Go</title>
 
-    <link rel="stylesheet" type="text/css" href="{{.Web_Root}}/static/css/pure.css">
-    <link rel="stylesheet" type="text/css" href="{{.Web_Root}}/static/css/grids-responsive.css">
-    <link rel="stylesheet" type="text/css" href="{{.Web_Root}}/static/css/font-awesome.css">
-    <link rel="stylesheet" type="text/css" href="{{.Web_Root}}/static/css/datatables.css">
-    <link rel="stylesheet" type="text/css" href="{{.Web_Root}}/static/css/postfix-go.css">
-    {{range .StyleSheets}}
-      <link rel="stylesheet" type="text/css" href="{{$root}}/static/css/{{.}}.css">
-    {{end}}
+    <link rel="stylesheet" type="text/css" href="{{.Prefix}}static/css/pure.css">
+    <link rel="stylesheet" type="text/css" href="{{.Prefix}}static/css/grids-responsive.css">
+    <link rel="stylesheet" type="text/css" href="{{.Prefix}}static/css/font-awesome.css">
+    <link rel="stylesheet" type="text/css" href="{{.Prefix}}static/css/datatables.css">
+    <link rel="stylesheet" type="text/css" href="{{.Prefix}}static/css/postfix-go.css">
 
-    <script type="text/javascript" src="{{.Web_Root}}/static/js/datatables.js"></script>
-    <script type="text/javascript" src="{{.Web_Root}}/static/js/datatables.{{.Language}}.js"></script>
-    {{range .JavaScripts}}
-      <script type="text/javascript" src="{{$root}}/static/js/{{.}}.js"></script>
-    {{end}}
+    <script type="text/javascript" src="{{.Prefix}}static/js/datatables.js"></script>
+    <script type="text/javascript" src="{{.Prefix}}static/js/datatables.{{.Language}}.js"></script>
   </head>
   <body>
-    <script type="text/javascript" src="{{.Web_Root}}/static/js/alertify.js"></script>
+    <script type="text/javascript" src="{{.Prefix}}static/js/alertify.js"></script>
     <script type="text/javascript">
       var message;
       {{if .Flash}}
@@ -46,7 +39,7 @@
     <div class="pure-g status-line">
       <div class="pure-u-1 pure-u-sm-1-5 status-left">
         <span>
-          <a href="{{.Web_Root}}/" class="pure-button menu-button pure-button-primary">
+          <a href="{{.Prefix}}home" class="pure-button menu-button pure-button-primary">
             <i class="fa fa-envelope-o"></i>
             <br>
             Postfix-Go
@@ -57,12 +50,12 @@
         <span>
           {{if .LoggedIn}}
             <b>{{.CurrentAddress.Email}}</b>
-            <a href="{{.Web_Root}}/logout" class="pure-button menu-button">
+            <a href="{{.Prefix}}logout" class="pure-button menu-button">
               <i class="fa fa-sign-out"></i>
               <br>
               {{T "action_logout"}}
             </a>
-            <a href="{{.Web_Root}}/help/{{.Title}}" class="pure-button menu-button warning-button" target="_blank">
+            <a href="{{.Prefix}}help/{{.Title}}" class="pure-button menu-button warning-button" target="_blank">
               <i class="fa fa-question"></i>
               <br>
               {{T "action_help"}}

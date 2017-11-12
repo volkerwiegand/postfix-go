@@ -13,22 +13,17 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-var (
-	LoginURL  string
-	LogoutURL string
+const (
+	LoginURL  = "login"
+	LogoutURL = "logout"
 )
-
-func LoginInit() {
-	LoginURL  = Web_Root + "/login"
-	LogoutURL = Web_Root + "/logout"
-}
 
 func LoginEmail(address *Address, db *gorm.DB) error {
 	t, _ := i18n.Tfunc(Language)
 
-	first_pass := PasswordRandom(10)
+	initial := PasswordRandom(10)
 	update := make(map[string]interface{})
-	update["first_pass"] = PasswordEncrypt(first_pass)
+	update["initial"] = PasswordBcrypt(address.Email, initial)
 	update["updated_at"] = time.Now()
 	update["updated_by"] = address.ID
 
@@ -41,7 +36,7 @@ func LoginEmail(address *Address, db *gorm.DB) error {
 	mail.SetHeader("From",    address.Email)
 	mail.SetHeader("To",      address.OtherEmail)
 	mail.SetHeader("Subject", fmt.Sprintf(t("address_email_subject"), address.Email))
-	address.FirstPass = first_pass
+	address.Initial = initial
 
 	tmpl := fmt.Sprintf("password_email_%s", Language)
 	mail.AddAlternativeWriter("text/plain", func(w io.Writer) error {
@@ -59,8 +54,9 @@ func LoginEmail(address *Address, db *gorm.DB) error {
 
 func LoginLoginGet(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	log.Printf("INFO  GET /login")
+	prefix := ""
 
-	ctx := Context{Title: "login_title"}
+	ctx := Context{Title: "login_title", Prefix: prefix}
 
 	RenderHtml(w, r, "login", ctx)
 }
@@ -68,6 +64,7 @@ func LoginLoginGet(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 func LoginLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
 	log.Printf("INFO  POST /login")
+	prefix := ""
 
 	db := OpenDB(true)
 	defer CloseDB()
@@ -75,12 +72,12 @@ func LoginLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	email    := r.FormValue("login_email")
 	password := r.FormValue("login_password")
 	submit   := r.FormValue("login_action")
-	log.Printf("DEBUG email='%s' password='%s' submit='%s'", email, password, submit)
+	log.Printf("DEBUG email='%s' password='%s' submit='%s'", email, "[hidden]", submit)
 
 	address := AddressFindByEmail(email, db)
 	if address == nil {
 		SetFlash(w, F_ERROR, t("flash_login_failure"))
-		http.Redirect(w, r, LoginURL, http.StatusFound)
+		http.Redirect(w, r, prefix + LoginURL, http.StatusFound)
 		return
 	}
 
@@ -90,26 +87,26 @@ func LoginLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 			if err := LoginEmail(address, db); err != nil {
 				flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 				SetFlash(w, F_ERROR, flash)
-				http.Redirect(w, r, LoginURL, http.StatusFound)
+				http.Redirect(w, r, prefix + LoginURL, http.StatusFound)
 				return
 			}
 			SetFlash(w, F_INFO, t("flash_check_other_email"))
-			http.Redirect(w, r, LoginURL, http.StatusFound)
+			http.Redirect(w, r, prefix + LoginURL, http.StatusFound)
 			return
 		}
 		SetFlash(w, F_INFO, t("flash_use_password_letter"))
-		http.Redirect(w, r, LoginURL, http.StatusFound)
+		http.Redirect(w, r, prefix + LoginURL, http.StatusFound)
 		return
 	}
 
-	err_f := bcrypt.CompareHashAndPassword([]byte(address.FirstPass), []byte(password))
-	err_p := bcrypt.CompareHashAndPassword([]byte(address.Password),  []byte(password))
+	err_f := bcrypt.CompareHashAndPassword([]byte(address.Initial), []byte(password))
+	err_p := bcrypt.CompareHashAndPassword([]byte(address.Bcrypt),  []byte(password))
 
 	if err_f == nil || (err_p == nil && address.Admin == false) {
 		uid := fmt.Sprintf("%d", address.ID)
 		SetCookie(w, "address_id",  uid)
 		SetFlash(w, F_INFO, t("flash_login_update"))
-		http.Redirect(w, r, PasswordURL, http.StatusFound)
+		http.Redirect(w, r, prefix + PasswordURL, http.StatusFound)
 		return
 	}
 
@@ -117,18 +114,19 @@ func LoginLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		uid := fmt.Sprintf("%d", address.ID)
 		SetCookie(w, "address_id",  uid)
 		SetFlash(w, F_INFO, t("flash_login_success"))
-		http.Redirect(w, r, HomeURL, http.StatusFound)
+		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
 		return
 	}
 
 	log.Printf("DEBUG login failed %s", address.Email)
 	SetFlash(w, F_ERROR, t("flash_login_failure"))
-	http.Redirect(w, r, LoginURL, http.StatusFound)
+	http.Redirect(w, r, prefix + LoginURL, http.StatusFound)
 }
 
 func LoginLogout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
 	log.Printf("INFO  GET /logout")
+	prefix := ""
 
 	uid := GetCookie(r, "address_id")
 	DelCookie(w, "address_id")
@@ -137,5 +135,5 @@ func LoginLogout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	DelCookie(w, "referer")
 
-	http.Redirect(w, r, LoginURL, http.StatusFound)
+	http.Redirect(w, r, prefix + LoginURL, http.StatusFound)
 }

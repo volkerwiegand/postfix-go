@@ -61,7 +61,7 @@
   { "id": "password_password",		"translation": "Kennwort" },
   { "id": "password_default",		"translation": "geheim" },
   { "id": "password_confirmation",	"translation": "Wiederholung" },
-  { "id": "password_email_first",	"translation": "Das Initial-Kennwort ist: " },
+  { "id": "password_email_initial",	"translation": "Das Initial-Kennwort ist: " },
   { "id": "password_email_info",	"translation": "Bitte das Initial-Kennwort verwenden, um ein neues Kennwort zu erzeugen." },
   { "id": "alias_one",			"translation": "Aliasname" },
   { "id": "alias_many",			"translation": "Aliasnamen" },

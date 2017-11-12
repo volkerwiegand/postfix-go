@@ -27,10 +27,10 @@ const (
 type Context struct {
 	Title          string
 	Language       string
-	Web_Root       string
 	CsrfField      template.HTML
 	StyleSheets    []string
 	JavaScripts    []string
+	Prefix         string
 	Flash          string
 	CurrentAddress *Address
 	LoggedIn       bool
@@ -48,7 +48,6 @@ var (
 	DB_Connect    string
 	DB_ConnStr    string
 	Web_Addr      string
-	Web_Root      string
 	Web_Token     string
 	Def_Domain    string
 	SMTP_Host     string
@@ -78,7 +77,6 @@ func main() {
 	viper.SetDefault("Language",      "de")
 	viper.SetDefault("DB_Type",       "sqlite3")
 	viper.SetDefault("Web_Addr",      ":8000")
-	viper.SetDefault("Web_Root",      "/postfix-go")
 	viper.SetDefault("DB_Connect",    "postfix-go.sql")
 	viper.SetDefault("Web_Token",     "_Postfix_Dovecot_Golang_PureCSS_")	// 32 bytes
 	viper.SetDefault("Def_Domain",    "example.com")
@@ -98,7 +96,6 @@ func main() {
 	DB_Type       = viper.GetString("DB_Type")
 	DB_Connect    = viper.GetString("DB_Connect")
 	Web_Addr      = viper.GetString("Web_Addr")
-	Web_Root      = viper.GetString("Web_Root")
 	Web_Token     = viper.GetString("Web_Token")
 	Def_Domain    = viper.GetString("Def_Domain")
 	SMTP_Host     = viper.GetString("SMTP_Host")
@@ -115,11 +112,11 @@ func main() {
 	}
 
 	if Verbose {
-		log.Printf("DEBUG Language ........... %s",        Language)
-		log.Printf("DEBUG DB-Connect ......... %s:%s",     DB_Type, DB_ConnStr)
-		log.Printf("DEBUG Web-Addr / Root .... %s / '%s'", Web_Addr, Web_Root)
-		log.Printf("DEBUG SMTP-Host:Port ..... %s:%d",     SMTP_Host, SMTP_Port)
-		log.Printf("DEBUG SMTP-Login ......... %s / %s",   SMTP_Username, SMTP_Password)
+		log.Printf("DEBUG Language ........... %s",      Language)
+		log.Printf("DEBUG DB-Connect ......... %s:%s",   DB_Type, DB_ConnStr)
+		log.Printf("DEBUG Web-Addr ........... %s",      Web_Addr)
+		log.Printf("DEBUG SMTP-Host:Port ..... %s:%d",   SMTP_Host, SMTP_Port)
+		log.Printf("DEBUG SMTP-Login ......... %s / %s", SMTP_Username, SMTP_Password)
 	}
 
 	//
@@ -134,9 +131,6 @@ func main() {
 	//
 	// Initialize Database Tables (AddressInit must be last)
 	//
-	HomeInit()
-	LoginInit()
-	PasswordInit()
 	DomainInit()
 	AliasInit()
 	AddressInit()
@@ -157,31 +151,31 @@ func main() {
 			return tm.Format(t("date_time"))
 		},
 	}
-	Templates = template.Must(template.New("").Funcs(funcMap).ParseGlob("./templates/*"))
+	Templates = template.Must(template.New("").Funcs(funcMap).ParseGlob("templates/*"))
 
 	//
 	// Setup the web server and router
 	//
 	r := httprouter.New()
 
-	r.ServeFiles(Web_Root + "/static/*filepath", http.Dir("./static"))
+	r.ServeFiles("/static/*filepath", http.Dir("static"))
 
-	r.GET(Web_Root + "/",                   HomeIndex)
-	r.GET(Web_Root + "/login",              LoginLoginGet)
-	r.POST(Web_Root + "/login",             LoginLoginPost)
-	r.GET(Web_Root + "/logout",             LoginLogout)
-	r.GET(Web_Root + "/help/:page",         HelpShow)
-	r.GET(Web_Root + "/domain",             DomainCreate)
-	r.GET(Web_Root + "/domain/:id",         DomainEdit)
-	r.POST(Web_Root + "/domain/:id",        DomainUpdate)
-	r.GET(Web_Root + "/domain/:id/delete",  DomainDelete)
-	r.GET(Web_Root + "/address",            AddressCreate)
-	r.GET(Web_Root + "/address/:id",        AddressEdit)
-	r.POST(Web_Root + "/address/:id",       AddressUpdate)
-	r.GET(Web_Root + "/address/:id/print",  AddressPrint)
-	r.GET(Web_Root + "/address/:id/delete", AddressDelete)
-	r.GET(Web_Root + "/password",           PasswordEdit)
-	r.POST(Web_Root + "/password",          PasswordUpdate)
+	r.GET("/home",               HomeIndex)
+	r.GET("/login",              LoginLoginGet)
+	r.GET("/logout",             LoginLogout)
+	r.GET("/help/:page",         HelpShow)
+	r.GET("/domain",             DomainCreate)
+	r.GET("/domain/:id",         DomainEdit)
+	r.GET("/domain/:id/delete",  DomainDelete)
+	r.GET("/address",            AddressCreate)
+	r.GET("/address/:id",        AddressEdit)
+	r.GET("/address/:id/print",  AddressPrint)
+	r.GET("/address/:id/delete", AddressDelete)
+	r.GET("/password",           PasswordEdit)
+	r.POST("/login",             LoginLoginPost)
+	r.POST("/domain/:id",        DomainUpdate)
+	r.POST("/address/:id",       AddressUpdate)
+	r.POST("/password",          PasswordUpdate)
 	// TODO audit trail
 
 	srv := &http.Server{
@@ -196,7 +190,6 @@ func main() {
 
 func RenderHtml(w http.ResponseWriter, r *http.Request, tmpl string, ctx Context) {
 	ctx.Language = Language
-	ctx.Web_Root = Web_Root
 
 	if ctx.Flash = GetCookie(r, "flash"); ctx.Flash != "" {
 		//log.Printf("DEBUG RenderHtml:GetCookie flash: %s", ctx.Flash)

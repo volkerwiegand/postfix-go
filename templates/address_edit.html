@@ -1,7 +1,7 @@
 {{- define "address_edit" -}}
   {{template "header" .}}
 
-  <form class="pure-form pure-form-aligned" action="{{.Web_Root}}/address/{{.Address.ID}}" method="POST" accept-charset="UTF-8" autocomplete="off">
+  <form class="pure-form pure-form-aligned" action="{{.Prefix}}address/{{.Address.ID}}" method="POST" accept-charset="UTF-8" autocomplete="off">
     {{.CsrfField}}
 
     <fieldset>
@@ -57,14 +57,13 @@
         <span class="pure-form-message-inline">{{T "address_aliases_hint"}}</span>
       </div>
 
-      <div class="pure-control-group">
       <div class="pure-controls">
         <button type="submit" class="pure-button menu-button success-button" value="save">
           <i class="fa fa-check"></i>
           <br>
           {{T "action_save"}}
         </button>
-        <a href="{{.Web_Root}}/" class="pure-button menu-button">
+        <a href="{{.Prefix}}home" class="pure-button menu-button">
           <i class="fa fa-times"></i>
           <br>
           {{T "action_cancel"}}
