@@ -30,7 +30,7 @@ fresh: clean postfix-go
 	./postfix-go -v
 
 dist: postfix-go
-	tar cvzf postfix-go.tgz postfix-go postfix-go.md5 locales static templates
+	tar cvzf postfix-go.tgz postfix-go locales static templates
 	md5sum postfix-go.tgz | tee postfix-go.md5
 
 update:
