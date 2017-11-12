@@ -9,7 +9,6 @@ LOC := $(wildcard locales/*.json)
 postfix-go: $(SRC) $(TPL) $(LOC)
 	ctags *.go
 	go build
-	md5sum postfix-go | cut -c1-32 | tee postfix-go.md5
 
 tags: $(SRC) $(TPL) $(LOC)
 	ctags *.go
@@ -32,6 +31,7 @@ fresh: clean postfix-go
 
 dist: postfix-go
 	tar cvzf postfix-go.tgz postfix-go postfix-go.md5 locales static templates
+	md5sum postfix-go.tgz | tee postfix-go.md5
 
 update:
 	go get -u golang.org/x/crypto/bcrypt
