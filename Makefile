@@ -2,6 +2,8 @@
 #
 #
 
+VERSION := 1.0.1
+
 SRC := $(wildcard *.go)
 TPL := $(wildcard templates/*.html)
 LOC := $(wildcard locales/*.json)
@@ -24,14 +26,14 @@ clean:
 	rm -f tags postfix-go.sql
 
 real-clean: clean
-	rm -f postfix-go postfix-go.md5 postfix-go.tgz
+	rm -f postfix-go postfix-go-*.md5 postfix-go-*.tgz
 
 fresh: clean postfix-go
 	./postfix-go -v
 
 dist: postfix-go
-	tar cvzf postfix-go.tgz postfix-go locales static templates
-	md5sum postfix-go.tgz | tee postfix-go.md5
+	tar cvzf postfix-go-$(VERSION).tgz postfix-go locales static templates
+	md5sum postfix-go-$(VERSION).tgz | tee postfix-go-$(VERSION).md5
 
 update:
 	go get -u golang.org/x/crypto/bcrypt
