@@ -152,9 +152,6 @@ func main() {
 			t, _ := i18n.Tfunc(Language)
 			return t(s)
 		},
-		"url": func(s string) string {
-			return Web_Root + s
-		},
 		"time": func(tm time.Time) string {
 			t, _ := i18n.Tfunc(Language)
 			return tm.Format(t("date_time"))

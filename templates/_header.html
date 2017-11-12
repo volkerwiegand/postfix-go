@@ -1,4 +1,5 @@
 {{- define "header" -}}
+{{- $root := .Web_Root -}}
 <!DOCTYPE html>
 <html lang="{{.Language}}">
   <head>
@@ -16,13 +17,13 @@
     <link rel="stylesheet" type="text/css" href="{{.Web_Root}}/static/css/datatables.css">
     <link rel="stylesheet" type="text/css" href="{{.Web_Root}}/static/css/postfix-go.css">
     {{range .StyleSheets}}
-      <link rel="stylesheet" type="text/css" href="{{.Web_Root}}/static/css/{{.}}.css">
+      <link rel="stylesheet" type="text/css" href="{{$root}}/static/css/{{.}}.css">
     {{end}}
 
     <script type="text/javascript" src="{{.Web_Root}}/static/js/datatables.js"></script>
     <script type="text/javascript" src="{{.Web_Root}}/static/js/datatables.{{.Language}}.js"></script>
     {{range .JavaScripts}}
-      <script type="text/javascript" src="{{.Web_Root}}/static/js/{{.}}.js"></script>
+      <script type="text/javascript" src="{{$root}}/static/js/{{.}}.js"></script>
     {{end}}
   </head>
   <body>
