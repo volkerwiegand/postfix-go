@@ -1,7 +1,7 @@
 {{- define "address_edit" -}}
   {{template "header" .}}
 
-  <form class="pure-form pure-form-aligned" action="{{.Prefix}}address/{{.Address.ID}}" method="POST" accept-charset="UTF-8" autocomplete="off">
+  <form class="pure-form pure-form-aligned" action="{{.Base_URL}}address/{{.Address.ID}}" method="POST" accept-charset="UTF-8" autocomplete="off">
     {{.CsrfField}}
 
     <fieldset>
@@ -63,7 +63,7 @@
           <br>
           {{T "action_save"}}
         </button>
-        <a href="{{.Prefix}}home" class="pure-button menu-button">
+        <a href="{{.Base_URL}}home" class="pure-button menu-button">
           <i class="fa fa-times"></i>
           <br>
           {{T "action_cancel"}}

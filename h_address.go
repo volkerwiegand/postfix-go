@@ -33,6 +33,7 @@ type Address struct {
 	Aliases       []Alias
 	AliasList     string      `sql:"-"`
 	ConfirmDelete string      `sql:"-"`
+	Base_URL      string      `sql:"-"`
 }
 
 func AddressInit() {
@@ -114,6 +115,7 @@ func (address *Address) AddressSetup(db *gorm.DB) {
 	}
 
 	address.ConfirmDelete = fmt.Sprintf(t("delete_are_you_sure"), address.Email)
+	address.Base_URL = Base_URL
 }
 
 func AddressFindByID(id int, db *gorm.DB) *Address {
@@ -144,12 +146,12 @@ func AddressIsLoggedIn(r *http.Request, db *gorm.DB) (*Address, bool) {
 	return nil, false
 }
 
-func AddressContext(w http.ResponseWriter, r *http.Request, title string, need_admin bool, prefix string, db *gorm.DB) Context {
+func AddressContext(w http.ResponseWriter, r *http.Request, title string, need_admin bool, db *gorm.DB) Context {
 	t, _ := i18n.Tfunc(Language)
 
 	ctx := Context{
 		Title:          title,
-		Prefix:         prefix,
+		Base_URL:       Base_URL,
 		CurrentAddress: &Address{},
 		LoggedIn:       false,
 	}
@@ -165,31 +167,30 @@ func AddressContext(w http.ResponseWriter, r *http.Request, title string, need_a
 		}
 
 		SetFlash(w, F_ERROR, t("flash_forbidden"))
-		http.Redirect(w, r, prefix + LogoutURL, http.StatusFound)
+		http.Redirect(w, r, LogoutURL(), http.StatusFound)
 		return ctx
 	}
 
 	SetFlash(w, F_ERROR, t("flash_need_login"))
-	http.Redirect(w, r, prefix + LoginURL, http.StatusFound)
+	http.Redirect(w, r, LoginURL(), http.StatusFound)
 	return ctx
 }
 
 func AddressCreate(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
-	log.Printf("INFO  GET /address")
-	prefix := ""
+	log.Printf("INFO  GET %saddress", Base_URL)
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "address_create", true, prefix, db)
+	ctx := AddressContext(w, r, "address_create", true, db)
 	if !ctx.LoggedIn {
 		return
 	}
 	if ctx.CurrentAddress.Admin == false {
 		flash := fmt.Sprintf(t("flash_forbidden"))
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+		http.Redirect(w, r, HomeURL(), http.StatusFound)
 		return
 	}
 
@@ -202,13 +203,12 @@ func AddressCreate(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 func AddressEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
 	id, _ := strconv.Atoi(ps.ByName("id"))
-	log.Printf("INFO  GET /address/%d", id)
-	prefix := "../"
+	log.Printf("INFO  GET %saddress/%d", Base_URL, id)
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "address_edit", true, prefix, db)
+	ctx := AddressContext(w, r, "address_edit", true, db)
 	if !ctx.LoggedIn {
 		return
 	}
@@ -216,7 +216,7 @@ func AddressEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	if ctx.Address = AddressFindByID(id, db); ctx.Address == nil {
 		flash := fmt.Sprintf(t("flash_address_not_found"), id)
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+		http.Redirect(w, r, HomeURL(), http.StatusFound)
 		return
 	}
 	ctx.Address.AddressSetup(db)
@@ -228,13 +228,12 @@ func AddressEdit(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
 	id, _ := strconv.Atoi(ps.ByName("id"))
-	log.Printf("INFO  POST /address/%d", id)
-	prefix := "../"
+	log.Printf("INFO  POST %saddress/%d", Base_URL, id)
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "address_update", true, prefix, db)
+	ctx := AddressContext(w, r, "address_update", true, db)
 	if !ctx.LoggedIn {
 		return
 	}
@@ -244,7 +243,7 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	if err := db.Where("name = ?", domain_name).First(domain).Error; err != nil {
 		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+		http.Redirect(w, r, HomeURL(), http.StatusFound)
 		return
 	}
 
@@ -262,7 +261,7 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 		}
 		if flash := AliasCheck(alias_name, domain.Name, id, db); flash != "" {
 			SetFlash(w, F_ERROR, flash)
-			http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+			http.Redirect(w, r, HomeURL(), http.StatusFound)
 			return
 		}
 		log.Printf("INFO  Alias: %v", alias_name)
@@ -287,21 +286,21 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 				flash = fmt.Sprintf(t("flash_error_exists"), email)
 			}
 			SetFlash(w, F_ERROR, flash)
-			http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+			http.Redirect(w, r, HomeURL(), http.StatusFound)
 			return
 		}
 
 		for _, alias_name := range alias_names {
 			if flash := AliasCreate(address, alias_name, db); flash != "" {
 				SetFlash(w, F_ERROR, flash)
-				http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+				http.Redirect(w, r, HomeURL(), http.StatusFound)
 				return
 			}
 		}
 
 		flash := fmt.Sprintf(t("flash_created"), address.Email)
 		SetFlash(w, F_INFO, flash)
-		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+		http.Redirect(w, r, HomeURL(), http.StatusFound)
 		return
 	}
 
@@ -309,7 +308,7 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	if address == nil {
 		flash := fmt.Sprintf(t("flash_address_not_found"), id)
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+		http.Redirect(w, r, HomeURL(), http.StatusFound)
 		return
 	}
 
@@ -345,7 +344,7 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 			flash = fmt.Sprintf(t("flash_error_exists"), email)
 		}
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+		http.Redirect(w, r, HomeURL(), http.StatusFound)
 		return
 	}
 
@@ -353,26 +352,25 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	for _, alias_name := range alias_names {
 		if flash := AliasCreate(address, alias_name, db); flash != "" {
 			SetFlash(w, F_ERROR, flash)
-			http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+			http.Redirect(w, r, HomeURL(), http.StatusFound)
 			return
 		}
 	}
 
 	flash := fmt.Sprintf(t("flash_updated"), address.Email)
 	SetFlash(w, F_INFO, flash)
-	http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+	http.Redirect(w, r, HomeURL(), http.StatusFound)
 }
 
 func AddressPrint(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
 	id, _ := strconv.Atoi(ps.ByName("id"))
-	log.Printf("INFO  GET /address/%d/print", id)
-	prefix := "../../"
+	log.Printf("INFO  GET %saddress/%d/print", Base_URL, id)
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "address_print", true, prefix, db)
+	ctx := AddressContext(w, r, "address_print", true, db)
 	if !ctx.LoggedIn {
 		return
 	}
@@ -380,7 +378,7 @@ func AddressPrint(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	if ctx.Address = AddressFindByID(id, db); ctx.Address == nil {
 		flash := fmt.Sprintf(t("flash_address_not_found"), id)
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+		http.Redirect(w, r, HomeURL(), http.StatusFound)
 		return
 	}
 
@@ -393,7 +391,7 @@ func AddressPrint(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 	if err := db.Model(ctx.Address).Updates(update).Error; err != nil {
 		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+		http.Redirect(w, r, HomeURL(), http.StatusFound)
 		return
 	}
 
@@ -403,34 +401,33 @@ func AddressPrint(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 func AddressDelete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
 	id, _ := strconv.Atoi(ps.ByName("id"))
-	log.Printf("INFO  GET /address/%d/delete", id)
-	prefix := "../../"
+	log.Printf("INFO  GET %saddress/%d/delete", Base_URL, id)
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "address_delete", true, prefix, db)
+	ctx := AddressContext(w, r, "address_delete", true, db)
 	if !ctx.LoggedIn {
 		return
 	}
 	if id == ctx.CurrentAddress.ID {
 		flash := fmt.Sprintf(t("flash_forbidden"))
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+		http.Redirect(w, r, HomeURL(), http.StatusFound)
 		return
 	}
 
 	if ctx.Address = AddressFindByID(id, db); ctx.Address == nil {
 		flash := fmt.Sprintf(t("flash_address_not_found"), id)
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+		http.Redirect(w, r, HomeURL(), http.StatusFound)
 		return
 	}
 
 	if err := db.Where("address_id = ?", ctx.Address.ID).Delete(&Alias{}).Error; err != nil {
 		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+		http.Redirect(w, r, HomeURL(), http.StatusFound)
 		return
 	}
 
@@ -438,11 +435,11 @@ func AddressDelete(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	if err := db.Delete(ctx.Address).Error; err != nil {
 		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+		http.Redirect(w, r, HomeURL(), http.StatusFound)
 		return
 	}
 
 	flash := fmt.Sprintf(t("flash_deleted"), email)
 	SetFlash(w, F_INFO, flash)
-	http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+	http.Redirect(w, r, HomeURL(), http.StatusFound)
 }

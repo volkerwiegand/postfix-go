@@ -16,9 +16,9 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-const (
-	PasswordURL = "password"
-)
+func PasswordURL() string {
+	return Base_URL + "password"
+}
 
 func PasswordBcrypt(_, password string) string {
 	pswd := []byte(password)
@@ -77,13 +77,12 @@ func PasswordLetter(w http.ResponseWriter, ctx Context, initial string) {
 }
 
 func PasswordEdit(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	log.Printf("INFO  GET /password")
-	prefix := ""
+	log.Printf("INFO  GET %s", PasswordURL())
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "password_edit", false, prefix, db)
+	ctx := AddressContext(w, r, "password_edit", false, db)
 	if !ctx.LoggedIn {
 		return
 	}
@@ -93,13 +92,12 @@ func PasswordEdit(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 func PasswordUpdate(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
-	log.Printf("INFO  POST /password")
-	prefix := ""
+	log.Printf("INFO  POST %s", PasswordURL())
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "password_update", false, prefix, db)
+	ctx := AddressContext(w, r, "password_update", false, db)
 	if !ctx.LoggedIn {
 		return
 	}
@@ -110,13 +108,13 @@ func PasswordUpdate(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	if password == "" {
 		flash := t("flash_missing_password")
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + PasswordURL, http.StatusFound)
+		http.Redirect(w, r, PasswordURL(), http.StatusFound)
 		return
 	}
 	if password != confirmation {
 		flash := t("flash_bad_confirmation")
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + PasswordURL, http.StatusFound)
+		http.Redirect(w, r, PasswordURL(), http.StatusFound)
 		return
 	}
 
@@ -129,11 +127,11 @@ func PasswordUpdate(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	if err := db.Model(ctx.CurrentAddress).Updates(update).Error; err != nil {
 		flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, prefix + LogoutURL, http.StatusFound)
+		http.Redirect(w, r, LogoutURL(), http.StatusFound)
 		return
 	}
 
 	flash := fmt.Sprintf(t("flash_updated"), t("address_password"))
 	SetFlash(w, F_INFO, flash)
-	http.Redirect(w, r, prefix + LogoutURL, http.StatusFound)
+	http.Redirect(w, r, LogoutURL(), http.StatusFound)
 }

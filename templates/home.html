@@ -9,22 +9,21 @@
             <th>{{T "domain_one"}}</th>
             <th>{{T "address_one"}}</th>
             <th>{{T "alias_many"}}</th>
-            <th>Aktion</th>
+            <th>{{T "action_title"}}</th>
           </tr>
         </thead>
         <tbody>
           {{$my_id := .CurrentAddress.ID}}
-          {{$prefix := .Prefix}}
           {{range .Addresses}}
             <tr>
               <td>
-                <a href="{{$prefix}}domain/{{.DomainID}}">{{.DomainName}}</a>
+                <a href="{{.Base_URL}}domain/{{.DomainID}}">{{.DomainName}}</a>
               </td>
               <td>
                 {{if eq $my_id .ID}}
                   <b>
                 {{end}}
-                <a href="{{$prefix}}address/{{.ID}}">{{.Email}}</a>
+                <a href="{{.Base_URL}}address/{{.ID}}">{{.Email}}</a>
                 {{if eq $my_id .ID}}
                   </b>
                 {{end}}
@@ -40,18 +39,18 @@
               </td>
               <td>
                 {{if eq $my_id .ID}}
-                  <a href="{{$prefix}}password" class="pure-button menu-button">
+                  <a href="{{.Base_URL}}password" class="pure-button menu-button">
                     <i class="fa fa-key"></i>
                     <br>
                     {{T "password_password"}}
                   </a>
                 {{else}}
-                  <a href="{{$prefix}}address/{{.ID}}/print" class="pure-button menu-button" target="_blank">
+                  <a href="{{.Base_URL}}address/{{.ID}}/print" class="pure-button menu-button" target="_blank">
                     <i class="fa fa-print"></i>
                     <br>
                     {{T "password_password"}}
                   </a>
-                  <a href="{{$prefix}}address/{{.ID}}/delete" class="pure-button menu-button error-button"
+                  <a href="{{.Base_URL}}address/{{.ID}}/delete" class="pure-button menu-button error-button"
                           onclick="return confirm('{{.ConfirmDelete}}');">
                     <i class="fa fa-trash"></i>
                     <br>
@@ -64,14 +63,14 @@
           {{range .Domains}}
             <tr>
               <td>
-                <a href="{{$prefix}}domain/{{.ID}}">{{.Name}}</a>
+                <a href="{{.Base_URL}}domain/{{.ID}}">{{.Name}}</a>
               </td>
               <td>
               </td>
               <td>
               </td>
               <td>
-                <a href="{{$prefix}}domain/{{.ID}}/delete" class="pure-button menu-button error-button"
+                <a href="{{.Base_URL}}domain/{{.ID}}/delete" class="pure-button menu-button error-button"
                           onclick="return confirm('{{.ConfirmDelete}}');">
                   <i class="fa fa-trash"></i>
                   <br>
@@ -85,12 +84,12 @@
 
       <br>
 
-      <a href="{{.Prefix}}domain" class="pure-button menu-button success-button">
+      <a href="{{.Base_URL}}domain" class="pure-button menu-button success-button">
         <i class="fa fa-server"></i>
         <br>
         {{T "action_new_domain"}}
       </a>
-      <a href="{{.Prefix}}address" class="pure-button menu-button success-button">
+      <a href="{{.Base_URL}}address" class="pure-button menu-button success-button">
         <i class="fa fa-user"></i>
         <br>
         {{T "action_new_address"}}
@@ -100,7 +99,7 @@
   <script type="text/javascript">
     $(document).ready(function() {
       var table = $('table.table').show().DataTable({
-        {{if eq .Language "de"}}
+        {{if eq "de" .Language}}
           "language": dataTable_de,
         {{end}}
         "autoWidth": false

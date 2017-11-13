@@ -28,9 +28,7 @@ type Context struct {
 	Title          string
 	Language       string
 	CsrfField      template.HTML
-	StyleSheets    []string
-	JavaScripts    []string
-	Prefix         string
+	Base_URL       string
 	Flash          string
 	CurrentAddress *Address
 	LoggedIn       bool
@@ -49,6 +47,7 @@ var (
 	DB_ConnStr    string
 	Web_Addr      string
 	Web_Token     string
+	Base_URL      string
 	TLS_Cert      string
 	TLS_Key       string
 	Def_Domain    string
@@ -81,6 +80,7 @@ func main() {
 	viper.SetDefault("Web_Addr",      ":8000")
 	viper.SetDefault("DB_Connect",    "postfix-go.sql")
 	viper.SetDefault("Web_Token",     "_Postfix_Dovecot_Golang_PureCSS_")	// 32 bytes
+	viper.SetDefault("Base_URL",      "/")
 	viper.SetDefault("TLS_Cert",      "")
 	viper.SetDefault("TLS_Key",       "")
 	viper.SetDefault("Def_Domain",    "example.com")
@@ -101,6 +101,7 @@ func main() {
 	DB_Connect    = viper.GetString("DB_Connect")
 	Web_Addr      = viper.GetString("Web_Addr")
 	Web_Token     = viper.GetString("Web_Token")
+	Base_URL      = viper.GetString("Base_URL")
 	TLS_Cert      = viper.GetString("TLS_Cert")
 	TLS_Key       = viper.GetString("TLS_Key")
 	Def_Domain    = viper.GetString("Def_Domain")
@@ -118,11 +119,12 @@ func main() {
 	}
 
 	if Verbose {
-		log.Printf("DEBUG Language ........... %s",      Language)
-		log.Printf("DEBUG DB-Connect ......... %s:%s",   DB_Type, DB_ConnStr)
-		log.Printf("DEBUG Web-Addr ........... %s",      Web_Addr)
-		log.Printf("DEBUG SMTP-Host:Port ..... %s:%d",   SMTP_Host, SMTP_Port)
-		log.Printf("DEBUG SMTP-Login ......... %s / %s", SMTP_Username, SMTP_Password)
+		log.Printf("DEBUG Language ............ %s",      Language)
+		log.Printf("DEBUG DB-Connect .......... %s:%s",   DB_Type, DB_ConnStr)
+		log.Printf("DEBUG Web-Addr ............ %s",      Web_Addr)
+		log.Printf("DEBUG Base_URL ............ %s",      Base_URL)
+		log.Printf("DEBUG SMTP-Host:Port ...... %s:%d",   SMTP_Host, SMTP_Port)
+		log.Printf("DEBUG SMTP-Login .......... %s / %s", SMTP_Username, SMTP_Password)
 	}
 
 	//
@@ -166,22 +168,22 @@ func main() {
 
 	r.ServeFiles("/static/*filepath", http.Dir("static"))
 
-	r.GET("/home",               HomeIndex)
-	r.GET("/login",              LoginLoginGet)
-	r.GET("/logout",             LoginLogout)
-	r.GET("/help/:page",         HelpShow)
-	r.GET("/domain",             DomainCreate)
-	r.GET("/domain/:id",         DomainEdit)
-	r.GET("/domain/:id/delete",  DomainDelete)
-	r.GET("/address",            AddressCreate)
-	r.GET("/address/:id",        AddressEdit)
-	r.GET("/address/:id/print",  AddressPrint)
-	r.GET("/address/:id/delete", AddressDelete)
-	r.GET("/password",           PasswordEdit)
-	r.POST("/login",             LoginLoginPost)
-	r.POST("/domain/:id",        DomainUpdate)
-	r.POST("/address/:id",       AddressUpdate)
-	r.POST("/password",          PasswordUpdate)
+	r.GET(Base_URL,                        HomeIndex)
+	r.GET(Base_URL + "login",              LoginLoginGet)
+	r.GET(Base_URL + "logout",             LoginLogout)
+	r.GET(Base_URL + "help/:page",         HelpShow)
+	r.GET(Base_URL + "domain",             DomainCreate)
+	r.GET(Base_URL + "domain/:id",         DomainEdit)
+	r.GET(Base_URL + "domain/:id/delete",  DomainDelete)
+	r.GET(Base_URL + "address",            AddressCreate)
+	r.GET(Base_URL + "address/:id",        AddressEdit)
+	r.GET(Base_URL + "address/:id/print",  AddressPrint)
+	r.GET(Base_URL + "address/:id/delete", AddressDelete)
+	r.GET(Base_URL + "password",           PasswordEdit)
+	r.POST(Base_URL + "login",             LoginLoginPost)
+	r.POST(Base_URL + "domain/:id",        DomainUpdate)
+	r.POST(Base_URL + "address/:id",       AddressUpdate)
+	r.POST(Base_URL + "password",          PasswordUpdate)
 	// TODO audit trail
 
 	srv := &http.Server{
@@ -199,7 +201,7 @@ func main() {
 }
 
 func RenderHtml(w http.ResponseWriter, r *http.Request, tmpl string, ctx Context) {
-	ctx.Language = Language
+	log.Printf("DEBUG RenderHtml: %s", tmpl)
 
 	if ctx.Flash = GetCookie(r, "flash"); ctx.Flash != "" {
 		//log.Printf("DEBUG RenderHtml:GetCookie flash: %s", ctx.Flash)
@@ -207,6 +209,7 @@ func RenderHtml(w http.ResponseWriter, r *http.Request, tmpl string, ctx Context
 	}
 
 	ctx.CsrfField = csrf.TemplateField(r)
+	ctx.Language  = Language
 
 	if err := Templates.ExecuteTemplate(w, tmpl, ctx); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

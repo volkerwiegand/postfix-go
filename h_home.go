@@ -7,26 +7,25 @@ import (
 	"github.com/nicksnyder/go-i18n/i18n"
 )
 
-const (
-	HomeURL = "home"
-)
+func HomeURL() string {
+	return Base_URL
+}
 
 func HomeIndex(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
-	log.Printf("INFO  GET /home")
-	prefix := ""
+	log.Printf("INFO  GET %s", HomeURL())
 
 	db := OpenDB(true)
 	defer CloseDB()
 
-	ctx := AddressContext(w, r, "home_title", false, prefix, db)
+	ctx := AddressContext(w, r, "home_title", false, db)
 	if !ctx.LoggedIn {
 		return	// already redirected to /login if not logged in
 	}
 
 	if ctx.CurrentAddress.Admin == false {
 		SetFlash(w, F_INFO, t("flash_login_update"))
-		http.Redirect(w, r, prefix + PasswordURL, http.StatusFound)
+		http.Redirect(w, r, PasswordURL(), http.StatusFound)
 		return
 	}
 

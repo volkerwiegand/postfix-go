@@ -13,10 +13,13 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-const (
-	LoginURL  = "login"
-	LogoutURL = "logout"
-)
+func LoginURL() string {
+	return Base_URL + "login"
+}
+
+func LogoutURL() string {
+	return Base_URL + "logout"
+}
 
 func LoginEmail(address *Address, db *gorm.DB) error {
 	t, _ := i18n.Tfunc(Language)
@@ -53,18 +56,16 @@ func LoginEmail(address *Address, db *gorm.DB) error {
 }
 
 func LoginLoginGet(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	log.Printf("INFO  GET /login")
-	prefix := ""
+	log.Printf("INFO  GET %slogin", Base_URL)
 
-	ctx := Context{Title: "login_title", Prefix: prefix}
+	ctx := Context{Title: "login_title", Base_URL: Base_URL}
 
 	RenderHtml(w, r, "login", ctx)
 }
 
 func LoginLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
-	log.Printf("INFO  POST /login")
-	prefix := ""
+	log.Printf("INFO  POST %slogin", Base_URL)
 
 	db := OpenDB(true)
 	defer CloseDB()
@@ -72,12 +73,12 @@ func LoginLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	email    := r.FormValue("login_email")
 	password := r.FormValue("login_password")
 	submit   := r.FormValue("login_action")
-	log.Printf("DEBUG email='%s' password='%s' submit='%s'", email, "[hidden]", submit)
+	log.Printf("DEBUG email='%s' password=[hidden] submit='%s'", email, submit)
 
 	address := AddressFindByEmail(email, db)
 	if address == nil {
 		SetFlash(w, F_ERROR, t("flash_login_failure"))
-		http.Redirect(w, r, prefix + LoginURL, http.StatusFound)
+		http.Redirect(w, r, LoginURL(), http.StatusFound)
 		return
 	}
 
@@ -87,15 +88,15 @@ func LoginLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 			if err := LoginEmail(address, db); err != nil {
 				flash := fmt.Sprintf(t("flash_error_text"), err.Error())
 				SetFlash(w, F_ERROR, flash)
-				http.Redirect(w, r, prefix + LoginURL, http.StatusFound)
+				http.Redirect(w, r, LoginURL(), http.StatusFound)
 				return
 			}
 			SetFlash(w, F_INFO, t("flash_check_other_email"))
-			http.Redirect(w, r, prefix + LoginURL, http.StatusFound)
+			http.Redirect(w, r, LoginURL(), http.StatusFound)
 			return
 		}
 		SetFlash(w, F_INFO, t("flash_use_password_letter"))
-		http.Redirect(w, r, prefix + LoginURL, http.StatusFound)
+		http.Redirect(w, r, LoginURL(), http.StatusFound)
 		return
 	}
 
@@ -106,7 +107,7 @@ func LoginLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		uid := fmt.Sprintf("%d", address.ID)
 		SetCookie(w, "address_id",  uid)
 		SetFlash(w, F_INFO, t("flash_login_update"))
-		http.Redirect(w, r, prefix + PasswordURL, http.StatusFound)
+		http.Redirect(w, r, PasswordURL(), http.StatusFound)
 		return
 	}
 
@@ -114,19 +115,18 @@ func LoginLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		uid := fmt.Sprintf("%d", address.ID)
 		SetCookie(w, "address_id",  uid)
 		SetFlash(w, F_INFO, t("flash_login_success"))
-		http.Redirect(w, r, prefix + HomeURL, http.StatusFound)
+		http.Redirect(w, r, HomeURL(), http.StatusFound)
 		return
 	}
 
 	log.Printf("DEBUG login failed %s", address.Email)
 	SetFlash(w, F_ERROR, t("flash_login_failure"))
-	http.Redirect(w, r, prefix + LoginURL, http.StatusFound)
+	http.Redirect(w, r, LoginURL(), http.StatusFound)
 }
 
 func LoginLogout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	t, _ := i18n.Tfunc(Language)
-	log.Printf("INFO  GET /logout")
-	prefix := ""
+	log.Printf("INFO  GET %slogout", Base_URL)
 
 	uid := GetCookie(r, "address_id")
 	DelCookie(w, "address_id")
@@ -135,5 +135,5 @@ func LoginLogout(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	DelCookie(w, "referer")
 
-	http.Redirect(w, r, prefix + LoginURL, http.StatusFound)
+	http.Redirect(w, r, LoginURL(), http.StatusFound)
 }

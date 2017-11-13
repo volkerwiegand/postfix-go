@@ -4,6 +4,7 @@
   { "id": "negative",			"translation": "nein" },
   { "id": "show_new",			"translation": "(neu)" },
   { "id": "show_all",			"translation": "(alle)" },
+  { "id": "action_title",		"translation": "Aktion" },
   { "id": "action_help",		"translation": "Hilfe" },
   { "id": "help_de_home_title",		"translation": "Hilfe" },
   { "id": "flash_need_login",		"translation": "Bitte zuerst anmelden" },
