@@ -103,8 +103,9 @@ func LoginLoginPost(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	}
 
 	err_i := bcrypt.CompareHashAndPassword([]byte(address.Initial), []byte(password))
+	log.Printf("DEBUG Login: Initial=%v", err_i)
 	err_p := bcrypt.CompareHashAndPassword([]byte(address.Bcrypt),  []byte(password))
-	log.Printf("DEBUG Login: Initial=%v Bcrypt=%v", err_i, err_p)
+	log.Printf("DEBUG Login: Password=%v", err_p)
 
 	if err_i == nil || (err_p == nil && address.Admin == false) {
 		log.Printf("DEBUG Login: send to PasswordURL")

@@ -2,7 +2,7 @@
 #
 #
 
-VERSION := 1.0.7
+VERSION := 1.0.9
 
 SRC := $(wildcard *.go)
 TPL := $(wildcard templates/*.html)
@@ -31,9 +31,15 @@ real-clean: clean
 fresh: clean postfix-go
 	./postfix-go -v
 
-dist: postfix-go
+dist: real-clean
+	ctags *.go
+	go build
 	tar cvzf postfix-go-$(VERSION).tgz postfix-go locales static templates
-	md5sum postfix-go-$(VERSION).tgz | tee postfix-go-$(VERSION).md5
+	md5sum postfix-go-$(VERSION).tgz >postfix-go-$(VERSION).md5
+	git add .
+	git commit -a
+	git push
+	cat postfix-go-$(VERSION).md5
 
 update:
 	go get -u golang.org/x/crypto/bcrypt
