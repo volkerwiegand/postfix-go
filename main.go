@@ -166,7 +166,7 @@ func main() {
 	//
 	r := httprouter.New()
 
-	r.ServeFiles("/static/*filepath", http.Dir("static"))
+	r.ServeFiles(Base_URL + "static/*filepath", http.Dir("static"))
 
 	r.GET(Base_URL,                        HomeIndex)
 	r.GET(Base_URL + "login",              LoginLoginGet)
