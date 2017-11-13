@@ -49,6 +49,8 @@ var (
 	DB_ConnStr    string
 	Web_Addr      string
 	Web_Token     string
+	TLS_Cert      string
+	TLS_Key       string
 	Def_Domain    string
 	SMTP_Host     string
 	SMTP_Port     int
@@ -79,6 +81,8 @@ func main() {
 	viper.SetDefault("Web_Addr",      ":8000")
 	viper.SetDefault("DB_Connect",    "postfix-go.sql")
 	viper.SetDefault("Web_Token",     "_Postfix_Dovecot_Golang_PureCSS_")	// 32 bytes
+	viper.SetDefault("TLS_Cert",      "")
+	viper.SetDefault("TLS_Key",       "")
 	viper.SetDefault("Def_Domain",    "example.com")
 	viper.SetDefault("SMTP_Host",     "mail.example.com")
 	viper.SetDefault("SMTP_Port",     587)
@@ -97,6 +101,8 @@ func main() {
 	DB_Connect    = viper.GetString("DB_Connect")
 	Web_Addr      = viper.GetString("Web_Addr")
 	Web_Token     = viper.GetString("Web_Token")
+	TLS_Cert      = viper.GetString("TLS_Cert")
+	TLS_Key       = viper.GetString("TLS_Key")
 	Def_Domain    = viper.GetString("Def_Domain")
 	SMTP_Host     = viper.GetString("SMTP_Host")
 	SMTP_Port     = viper.GetInt("SMTP_Port")
@@ -185,7 +191,11 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	log.Fatal(srv.ListenAndServe())
+	if ProdMode {
+		log.Fatal(srv.ListenAndServeTLS(TLS_Cert, TLS_Key))
+	} else {
+		log.Fatal(srv.ListenAndServe())
+	}
 }
 
 func RenderHtml(w http.ResponseWriter, r *http.Request, tmpl string, ctx Context) {

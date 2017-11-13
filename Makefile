@@ -2,7 +2,7 @@
 #
 #
 
-VERSION := 1.0.3
+VERSION := 1.0.4
 
 SRC := $(wildcard *.go)
 TPL := $(wildcard templates/*.html)
