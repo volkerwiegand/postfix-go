@@ -253,12 +253,6 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	other_email := r.FormValue("address_other_email")
 	//log.Printf("DEBUG LocalPart=%s DomainName=%s Admin=%s", local_part, domain.Name, admin)
 
-	if flash := AliasCheck(local_part, domain.Name, id, db); flash != "" {
-		SetFlash(w, F_ERROR, flash)
-		http.Redirect(w, r, HomeURL(), http.StatusFound)
-		return
-	}
-
 	alias_names := []string{}
 	for _, alias_name := range strings.Split(r.FormValue("address_alias_list"), "\n") {
 		alias_name = strings.TrimSpace(alias_name)
@@ -276,6 +270,12 @@ func AddressUpdate(w http.ResponseWriter, r *http.Request, ps httprouter.Params)
 	//log.Printf("DEBUG AliasNames=%v", alias_names)
 
 	if id == 0 {
+		if flash := AliasCheck(local_part, domain.Name, id, db); flash != "" {
+			SetFlash(w, F_ERROR, flash)
+			http.Redirect(w, r, HomeURL(), http.StatusFound)
+			return
+		}
+
 		address := &Address{
 			LocalPart:  local_part,
 			DomainName: domain.Name,
