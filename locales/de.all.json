@@ -52,7 +52,7 @@
   { "id": "address_many",		"translation": "Adressen" },
   { "id": "address_email",		"translation": "Email" },
   { "id": "address_local_part",		"translation": "Lokalteil" },
-  { "id": "address_local_part_hint",	"translation": "Nur Buchstaben (ohne Umlaute oder ß) Ziffern . - _" },
+  { "id": "address_local_part_hint",	"translation": "2 bis 40 Buchstaben (ohne Umlaute oder ß) Ziffern . - _" },
   { "id": "address_local_part_default",	"translation": "admin" },
   { "id": "address_other_email",	"translation": "Alternativadresse" },
   { "id": "address_other_email_hint",	"translation": "Zum Zurücksetzen des Kennworts" },

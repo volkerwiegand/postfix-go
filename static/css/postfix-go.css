@@ -3,17 +3,6 @@ div.main {
   padding: 1em 0.5em;
 }
 
-.sidebar {
-  vertical-align: top;
-  padding: 0.5em;
-  border: 1px solid black;
-  border-radius: 6px;
-}
-
-.sidebar a {
-  margin: 0.3em 0;
-}
-
 .content {
   vertical-align: top;
   margin: 0 2em;
@@ -38,18 +27,6 @@ div.main {
 
 .login-form .pure-controls {
   margin-left: 0;
-}
-
-.button-row {
-  padding: 0.5em;
-  border: 1px solid black;
-  margin: 0.5em;
-  border-radius: 6px;
-}
-
-.button-row a, .button-row button {
-  margin-top: 0.2em;
-  margin-bottom: 0.2em;
 }
 
 .menu-button {
@@ -93,59 +70,19 @@ div.main {
   padding: 0.5em 1em;
 }
 
-.flash-success {
-  color: white;
-  background-color: green;
-}
-
-.flash-success-inv {
-  background-color: white;
-  color: green;
-}
-
-.flash-error {
-  color: white;
-  background-color: red;
-}
-
-.flash-error-inv {
-  background-color: white;
-  color: red;
-}
-
 fieldset {
   margin-left: 2em !important;
-}
-
-.pure-form-stacked .pure-control-group {
-  margin-bottom: 1em;
-}
-
-.noUi-handle {
-  background: green;
-}
-
-input.servo-angle {
-  width: 6em;
-}
-
-div.servo-slider {
-  padding: 0.5em 2em;
-}
-
-img.img-responsive {
-  width: 100%
 }
 
 table.table thead, table.table tfoot {
   text-align: left;
 }
 
-.shield-svg {
-  text-align: center;
-}
-
 .pure-table-horizontal td {
   border-bottom: 2px solid #dbdbdb !important;
+}
+
+.pure-form-stacked .pure-control-group {
+  margin-bottom: 1em;
 }
 

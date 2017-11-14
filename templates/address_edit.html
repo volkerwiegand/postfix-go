@@ -15,7 +15,8 @@
 
       <div class="pure-control-group">
         <label for="address_local_part">{{T "address_local_part"}}</label>
-        <input id="address_local_part" type="text" name="address_local_part" value="{{.Address.LocalPart}}" required autofocus>
+        <input id="address_local_part" type="text" name="address_local_part" value="{{.Address.LocalPart}}"
+                required pattern="[A-Za-z0-9\._-]{2,40}" autofocus>
         <span class="pure-form-message-inline">{{T "address_local_part_hint"}}</span>
       </div>
 
@@ -34,7 +35,7 @@
 
       <div class="pure-control-group">
         <label for="address_other_email">{{T "address_other_email"}}</label>
-        <input id="address_other_email" type="text" name="address_other_email" value="{{.Address.OtherEmail}}">
+        <input id="address_other_email" type="email" name="address_other_email" value="{{.Address.OtherEmail}}">
         <span class="pure-form-message-inline">{{T "address_other_email_hint"}}</span>
       </div>
 
