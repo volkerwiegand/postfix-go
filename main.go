@@ -51,10 +51,10 @@ var (
 	TLS_Cert      string
 	TLS_Key       string
 	Def_Domain    string
-	//SMTP_Host     string
-	//SMTP_Port     int
-	//SMTP_Username string
-	//SMTP_Password string
+	SMTP_Host     string
+	SMTP_Port     int
+	SMTP_Username string
+	SMTP_Password string
 	ProdMode      bool
 	Verbose       bool
 	Templates     *template.Template
@@ -84,10 +84,10 @@ func main() {
 	viper.SetDefault("TLS_Cert",      "")
 	viper.SetDefault("TLS_Key",       "")
 	viper.SetDefault("Def_Domain",    "example.com")
-	//viper.SetDefault("SMTP_Host",     "mail.example.com")
-	//viper.SetDefault("SMTP_Port",     587)
-	//viper.SetDefault("SMTP_Username", "relay_user")
-	//viper.SetDefault("SMTP_Password", "relay_pswd")
+	viper.SetDefault("SMTP_Host",     "mail.example.com")
+	viper.SetDefault("SMTP_Port",     587)
+	viper.SetDefault("SMTP_Username", "relay_user")
+	viper.SetDefault("SMTP_Password", "relay_pswd")
 	viper.SetDefault("ProdMode",      false)
 	viper.SetDefault("Verbose",       true)
 
@@ -105,10 +105,10 @@ func main() {
 	TLS_Cert      = viper.GetString("TLS_Cert")
 	TLS_Key       = viper.GetString("TLS_Key")
 	Def_Domain    = viper.GetString("Def_Domain")
-	//SMTP_Host     = viper.GetString("SMTP_Host")
-	//SMTP_Port     = viper.GetInt("SMTP_Port")
-	//SMTP_Username = viper.GetString("SMTP_Username")
-	//SMTP_Password = viper.GetString("SMTP_Password")
+	SMTP_Host     = viper.GetString("SMTP_Host")
+	SMTP_Port     = viper.GetInt("SMTP_Port")
+	SMTP_Username = viper.GetString("SMTP_Username")
+	SMTP_Password = viper.GetString("SMTP_Password")
 	ProdMode      = viper.GetBool("ProdMode")
 	Verbose       = viper.GetBool("Verbose")
 
@@ -123,8 +123,8 @@ func main() {
 		log.Printf("DEBUG DB-Connect .......... %s:%s",   DB_Type, DB_ConnStr)
 		log.Printf("DEBUG Web-Addr ............ %s",      Web_Addr)
 		log.Printf("DEBUG Base_URL ............ %s",      Base_URL)
-		//log.Printf("DEBUG SMTP-Host:Port ...... %s:%d",   SMTP_Host, SMTP_Port)
-		//log.Printf("DEBUG SMTP-Login .......... %s / %s", SMTP_Username, SMTP_Password)
+		log.Printf("DEBUG SMTP-Host:Port ...... %s:%d",   SMTP_Host, SMTP_Port)
+		log.Printf("DEBUG SMTP-Login .......... %s / %s", SMTP_Username, SMTP_Password)
 	}
 
 	//
