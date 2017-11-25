@@ -1,10 +1,13 @@
 package main
 
 import (
+	"os"
 	"log"
 	"fmt"
 	"io"
 	"time"
+	"strings"
+	"net"
 	"net/http"
 	"golang.org/x/crypto/bcrypt"
 	"github.com/julienschmidt/httprouter"
@@ -19,6 +22,35 @@ func LoginURL() string {
 
 func LogoutURL() string {
 	return Base_URL + "logout"
+}
+
+func LoginHostname() string {
+	// taken from https://github.com/Showmax/go-fqdn
+	hostname, err := os.Hostname()
+	if err != nil {
+		return "unknown"
+	}
+
+	addrs, err := net.LookupIP(hostname)
+	if err != nil {
+		return hostname
+	}
+
+	for _, addr := range addrs {
+		if ipv4 := addr.To4(); ipv4 != nil {
+			ip, err := ipv4.MarshalText()
+			if err != nil {
+				return hostname
+			}
+			hosts, err := net.LookupAddr(string(ip))
+			if err != nil || len(hosts) == 0 {
+				return hostname
+			}
+			fqdn := hosts[0]
+			return strings.TrimSuffix(fqdn, ".") // return fqdn without trailing dot
+		}
+	}
+	return hostname
 }
 
 func LoginEmail(address *Address, db *gorm.DB) error {
@@ -47,7 +79,7 @@ func LoginEmail(address *Address, db *gorm.DB) error {
 	})
 
 	//dial := gomail.NewDialer(SMTP_Host, SMTP_Port, SMTP_Username, SMTP_Password)
-	dial := gomail.Dialer{Host: "localhost", Port: 25}
+	dial := gomail.Dialer{Host: LoginHostname(), Port: 25}
 	if err := dial.DialAndSend(mail); err != nil {
 		log.Printf("ERROR LoginEmail:DialAndSend: %s", err)
 		return err
