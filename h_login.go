@@ -47,7 +47,7 @@ func LoginEmail(address *Address, db *gorm.DB) error {
 	})
 
 	//dial := gomail.NewDialer(SMTP_Host, SMTP_Port, SMTP_Username, SMTP_Password)
-	dial := gomail.Dialer{Host: "localhost", Port: 587}
+	dial := gomail.Dialer{Host: "localhost", Port: 25}
 	if err := dial.DialAndSend(mail); err != nil {
 		log.Printf("ERROR LoginEmail:DialAndSend: %s", err)
 		return err
