@@ -2,7 +2,7 @@
 # postfix-go Makefile
 #
 
-VERSION := 1.0.17
+VERSION := 1.0.18
 
 SRC := $(wildcard *.go)
 TPL := $(wildcard templates/*.html)
